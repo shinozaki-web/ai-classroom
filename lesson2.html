@@ -491,6 +491,7 @@ function init() {
   const nameParam = params.get('name');
   if (nameParam && !state.name) state.name = nameParam;
 
+  document.getElementById('app-screen').style.display = 'block';
   document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
   renderApp();
 }
