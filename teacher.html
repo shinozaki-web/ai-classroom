@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>先生用ダッシュボード | 門司港AI教室</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+
+  :root {
+    --sky: #4A90E2;
+    --sky-light: #EBF4FF;
+    --sky-dark: #2563a8;
+    --mint: #34C88A;
+    --mint-light: #E8FBF2;
+    --amber: #F5A623;
+    --amber-light: #FFF8EB;
+    --coral: #F26B5B;
+    --coral-light: #FFF0EE;
+    --purple: #7C6FE0;
+    --ink: #1a1a2e;
+    --ink-mid: #4a4a6a;
+    --ink-soft: #8888aa;
+    --bg: #F0F4FF;
+    --white: #ffffff;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--ink);
+    color: white;
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-logo {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-badge {
+    background: var(--sky);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .header-link {
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .header-link:hover { color: white; }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 40px 36px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 8px 40px rgba(74,144,226,0.12);
+    text-align: center;
+  }
+  .login-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .login-title {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .login-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 28px; line-height: 1.6; }
+  .input-label { font-size: 13px; font-weight: 700; color: var(--ink-mid); display: block; margin-bottom: 8px; text-align: left; }
+  .input-field {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #E0E4F0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    outline: none;
+    color: var(--ink);
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+  }
+  .input-field:focus { border-color: var(--sky); }
+  .btn-login {
+    width: 100%;
+    padding: 15px;
+    background: var(--sky);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-login:hover { background: var(--sky-dark); }
+  .login-note { font-size: 12px; color: var(--ink-soft); margin-top: 14px; line-height: 1.6; }
+
+  /* DASHBOARD */
+  #dashboard-screen { display: none; }
+  .main { max-width: 900px; margin: 0 auto; padding: 28px 16px 60px; }
+
+  /* STATS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .stat-num {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--sky);
+  }
+  .stat-label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* CLASS MANAGEMENT */
+  .section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .class-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+  }
+  .class-card-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid #F0F2FA;
+    transition: background 0.15s;
+  }
+  .class-card-header:hover { background: var(--bg); }
+  .class-code {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--sky);
+    letter-spacing: 1px;
+  }
+  .class-meta { font-size: 13px; color: var(--ink-soft); }
+  .class-toggle { color: var(--ink-soft); font-size: 18px; transition: transform 0.2s; }
+  .class-toggle.open { transform: rotate(180deg); }
+
+  /* STUDENT TABLE */
+  .student-table { width: 100%; border-collapse: collapse; }
+  .student-table th {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 10px 16px;
+    background: #FAFBFF;
+    border-bottom: 1px solid #EEF0FA;
+  }
+  .student-table td {
+    font-size: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #EEF0FA;
+    color: var(--ink-mid);
+  }
+  .student-table tr:last-child td { border-bottom: none; }
+  .student-table tr:hover td { background: #FAFBFF; }
+  .student-name { font-weight: 700; color: var(--ink); }
+
+  /* PROGRESS BUBBLES */
+  .step-bubbles { display: flex; gap: 4px; }
+  .step-bubble {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #E8EAF6;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+  }
+  .step-bubble.done { background: var(--mint); color: white; }
+
+  /* STATUS TAG */
+  .status-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 99px;
+    display: inline-block;
+  }
+  .status-done { background: var(--mint-light); color: #1a7a4a; }
+  .status-mid { background: var(--amber-light); color: #b07000; }
+  .status-start { background: #F1EFE8; color: #888; }
+
+  /* NEW CLASS */
+  .new-class-form {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .new-class-form .input-field { margin: 0; flex: 1; min-width: 180px; padding: 10px 14px; }
+  .btn-add {
+    padding: 11px 22px;
+    background: var(--sky);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: var(--sky-dark); }
+
+  /* COPY BUTTON */
+  .btn-copy {
+    padding: 5px 12px;
+    background: var(--sky-light);
+    color: var(--sky-dark);
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-copy:hover { background: var(--sky); color: white; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  /* LAST SEEN */
+  .last-seen { font-size: 12px; color: var(--ink-soft); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .student-table th:nth-child(4),
+    .student-table td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🏫 AI教室 <span class="header-badge">先生用</span></div>
+  <div class="header-right">
+    <a class="header-link" href="index.html">← 生徒画面</a>
+    <span class="header-link" onclick="logout()">ログアウト</span>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <span class="login-icon">🔑</span>
+    <div class="login-title">先生用ログイン</div>
+    <div class="login-sub">門司港プログラミング教室の先生専用ページです。<br>パスワードを入力してください。</div>
+    <label class="input-label">🔒 パスワード</label>
+    <input class="input-field" id="pw-input" type="password" placeholder="パスワードを入力"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">ログイン</button>
+    <div class="login-note">※ パスワードは門司港プログラミング教室管理者に確認してください。<br>デモ用パスワード：<strong>lam2024</strong></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-screen">
+  <div class="main">
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-num" id="s-students">0</div><div class="stat-label">生徒数（合計）</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-classes">0</div><div class="stat-label">クラス数</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-completed">0</div><div class="stat-label">授業完了者</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均進捗ステップ</div></div>
+    </div>
+
+    <!-- CLASS MANAGEMENT -->
+    <div class="section">
+      <div class="section-title">📋 クラス管理</div>
+      <div class="new-class-form">
+        <div style="flex:1;min-width:180px">
+          <label class="input-label" style="margin-bottom:6px">新しいクラスコードを作成</label>
+          <input class="input-field" id="new-class-input" placeholder="例：MOJIKO-2024A" maxlength="20">
+        </div>
+        <button class="btn-add" onclick="addClass()">＋ クラスを追加</button>
+      </div>
+      <div id="classes-container"></div>
+    </div>
+
+    <!-- ALL STUDENTS -->
+    <div class="section">
+      <div class="section-title">👥 全生徒リスト</div>
+      <div class="class-card">
+        <div id="all-students-table"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TEACHER_PW = 'lam2024';
+let teacherClasses = [];
+
+function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === TEACHER_PW) {
+    sessionStorage.setItem('teacher-auth', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-screen').style.display = 'block';
+    loadDashboard();
+  } else {
+    showToast('パスワードが違います');
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('teacher-auth');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('dashboard-screen').style.display = 'none';
+}
+
+function loadDashboard() {
+  teacherClasses = JSON.parse(localStorage.getItem('ai-classroom-classes') || '["MOJIKO-2024A","MOJIKO-2024B"]');
+  const teacherData = JSON.parse(localStorage.getItem('ai-classroom-teacher') || '{}');
+  renderStats(teacherData);
+  renderClasses(teacherClasses, teacherData);
+  renderAllStudents(teacherData);
+}
+
+function renderStats(data) {
+  let total = 0, completed = 0, stepSum = 0;
+  Object.values(data).forEach(cls => {
+    Object.values(cls).forEach(s => {
+      total++;
+      const steps = (s.completedSteps||[]).length;
+      if (steps >= 5) completed++;
+      stepSum += steps;
+    });
+  });
+  document.getElementById('s-students').textContent = total;
+  document.getElementById('s-classes').textContent = teacherClasses.length;
+  document.getElementById('s-completed').textContent = completed;
+  document.getElementById('s-avg').textContent = total ? (stepSum/total).toFixed(1) : '0';
+}
+
+function renderClasses(classes, data) {
+  const container = document.getElementById('classes-container');
+  if (!classes.length) {
+    container.innerHTML = '<div class="empty-state">クラスがまだありません。<br>上のフォームからクラスコードを作成してください。</div>';
+    return;
+  }
+  container.innerHTML = classes.map(code => {
+    const students = data[code] ? Object.values(data[code]) : [];
+    return `
+      <div class="class-card">
+        <div class="class-card-header" onclick="toggleClass('cc-${code}', this)">
+          <div>
+            <div class="class-code">${esc(code)}</div>
+            <div class="class-meta">${students.length}名 参加</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn-copy" onclick="event.stopPropagation();copyCode('${esc(code)}')">コードをコピー</button>
+            <button class="btn-copy" style="background:#fff0ee;color:#c04040" onclick="event.stopPropagation();deleteClass('${esc(code)}')">削除</button>
+            <span class="class-toggle" id="toggle-${code}">▼</span>
+          </div>
+        </div>
+        <div id="cc-${code}" style="display:none">
+          ${students.length ? renderStudentTable(students) : '<div class="empty-state">まだ生徒が参加していません。</div>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStudentTable(students) {
+  return `
+    <table class="student-table">
+      <thead>
+        <tr>
+          <th>なまえ</th>
+          <th>進捗</th>
+          <th>会話数</th>
+          <th>ステータス</th>
+          <th>最終アクセス</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${students.map(s => {
+          const steps = (s.completedSteps||[]).length;
+          const chats = (s.chatCounts||[]).reduce((a,b)=>a+b,0);
+          const status = steps >= 5 ? 'done' : steps > 0 ? 'mid' : 'start';
+          const statusLabel = steps >= 5 ? '完了 🎉' : steps > 0 ? '進行中' : '未開始';
+          const last = s.lastSeen ? timeAgo(s.lastSeen) : '-';
+          return `
+            <tr>
+              <td class="student-name">${esc(s.name||'-')}</td>
+              <td><div class="step-bubbles">${[0,1,2,3,4].map(i=>`<div class="step-bubble ${(s.completedSteps||[]).includes(i)?'done':''}">${i+1}</div>`).join('')}</div></td>
+              <td>${chats}</td>
+              <td><span class="status-tag status-${status}">${statusLabel}</span></td>
+              <td class="last-seen">${last}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderAllStudents(data) {
+  const allStudents = [];
+  Object.entries(data).forEach(([code, cls]) => {
+    Object.values(cls).forEach(s => allStudents.push({...s, classCode: code}));
+  });
+
+  const container = document.getElementById('all-students-table');
+  if (!allStudents.length) {
+    container.innerHTML = '<div class="empty-state">まだ生徒データがありません。<br>生徒が学習を始めると、ここに表示されます。</div>';
+    return;
+  }
+  allStudents.sort((a,b) => (b.lastSeen||0) - (a.lastSeen||0));
+  container.innerHTML = `
+    <table class="student-table">
+      <thead>
+        <tr>
+          <th>なまえ</th>
+          <th>クラス</th>
+          <th>進捗</th>
+          <th>ステータス</th>
+          <th>最終アクセス</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allStudents.map(s => {
+          const steps = (s.completedSteps||[]).length;
+          const status = steps >= 5 ? 'done' : steps > 0 ? 'mid' : 'start';
+          const statusLabel = steps >= 5 ? '完了 🎉' : steps > 0 ? '進行中' : '未開始';
+          return `
+            <tr>
+              <td class="student-name">${esc(s.name||'-')}</td>
+              <td><span class="btn-copy" style="cursor:default">${esc(s.classCode||'-')}</span></td>
+              <td><div class="step-bubbles">${[0,1,2,3,4].map(i=>`<div class="step-bubble ${(s.completedSteps||[]).includes(i)?'done':''}">${i+1}</div>`).join('')}</div></td>
+              <td><span class="status-tag status-${status}">${statusLabel}</span></td>
+              <td class="last-seen">${s.lastSeen ? timeAgo(s.lastSeen) : '-'}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function toggleClass(id, header) {
+  const el = document.getElementById(id);
+  const code = id.replace('cc-', '');
+  const tog = document.getElementById('toggle-' + code);
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    tog.classList.add('open');
+  } else {
+    el.style.display = 'none';
+    tog.classList.remove('open');
+  }
+}
+
+function addClass() {
+  const code = document.getElementById('new-class-input').value.trim().toUpperCase();
+  if (!code) { showToast('クラスコードを入力してね'); return; }
+  if (teacherClasses.includes(code)) { showToast('すでに存在するコードです'); return; }
+  teacherClasses.push(code);
+  localStorage.setItem('ai-classroom-classes', JSON.stringify(teacherClasses));
+  document.getElementById('new-class-input').value = '';
+  loadDashboard();
+  showToast('✅ クラス ' + code + ' を追加しました');
+}
+
+function deleteClass(code) {
+  if (!confirm(code + ' を削除しますか？生徒データも消えます。')) return;
+  teacherClasses = teacherClasses.filter(c => c !== code);
+  localStorage.setItem('ai-classroom-classes', JSON.stringify(teacherClasses));
+  const data = JSON.parse(localStorage.getItem('ai-classroom-teacher') || '{}');
+  delete data[code];
+  localStorage.setItem('ai-classroom-teacher', JSON.stringify(data));
+  loadDashboard();
+  showToast('🗑️ 削除しました');
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => showToast('📋 ' + code + ' をコピーしました'));
+}
+
+function timeAgo(ts) {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1) return 'たった今';
+  if (m < 60) return m + '分前';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + '時間前';
+  return Math.floor(h/24) + '日前';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Auto-refresh every 30s
+setInterval(() => { if (document.getElementById('dashboard-screen').style.display !== 'none') loadDashboard(); }, 30000);
+
+// Boot
+if (sessionStorage.getItem('teacher-auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard-screen').style.display = 'block';
+  loadDashboard();
+}
+</script>
+</body>
+</html>

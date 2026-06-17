@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第1回：AIってなんだろう？ | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<div id="welcome-screen">
+  <div class="welcome-card">
+    <span class="welcome-emoji">🤖</span>
+    <div class="welcome-title">AIってなんだろう？<br>Claudeと話してみよう！</div>
+    <div class="welcome-sub">門司港プログラミング教室のAI授業へようこそ。<br>まず自分の名前とクラスコードを入力しよう！</div>
+
+    <label class="input-label" for="name-input">👤 なまえ（ニックネームでもOK）</label>
+    <input class="input-field" id="name-input" type="text" placeholder="例：たろう" maxlength="20">
+
+    <label class="input-label" for="class-input">🏫 クラスコード（先生に聞いてね）</label>
+    <input class="input-field" id="class-input" type="text" placeholder="例：MOJIKO-2024A" maxlength="20">
+    <div class="class-optional">※ クラスコードは先生に聞いてね。なければ空白でもOK。</div>
+
+    <button class="btn-start" onclick="startApp()">はじめる！ 🚀</button>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><span>🤖</span> AI教室</div>
+    <div class="header-right">
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">たろうさん</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- PROGRESS -->
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>📚 今日のステップ</span>
+        <span id="progress-text">0 / 5 完了</span>
+      </div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label">
+        <span>はじめに</span>
+        <span>体験</span>
+        <span>じぶんで</span>
+        <span>かんがえる</span>
+        <span>まとめ</span>
+      </div>
+    </div>
+
+    <!-- LESSON CONTENT -->
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+
+<!-- MYPAGE OVERLAY -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name">たろうさん</div>
+    <div class="mypage-sub" id="mp-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label">授業の進み具合</div>
+      <div class="mypage-bar-bg">
+        <div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+
+<!-- BADGE POPUP -->
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub">ステップをクリアしたよ！</div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+
+<script src="shared.js"></script>
+<script>
+// ===== LESSON DATA =====
+const LESSONS = [
+  {
+    id: 0,
+    color: '#4A90E2',
+    iconBg: '#EBF4FF',
+    icon: '🌟',
+    tag: 'STEP 1',
+    tagColor: '#EBF4FF',
+    tagText: '#4A90E2',
+    title: 'AIってなんだろう？',
+    body: `
+      <p class="lesson-text">みんなは「AI（エーアイ）」って聞いたことある？<br>
+      AIは「人工知能」といって、コンピューターが人間みたいに考えたり、話したりできるしくみのことだよ。</p>
+      <p class="lesson-text">今日は <strong>Claude（クロード）</strong> というAIと話してみよう！<br>
+      Claudeは質問するといろんなことを教えてくれるよ。</p>
+      <div class="info-box">
+        <b>📌 AIってどんなもの？</b><br>
+        えんぴつや定規みたいな「道具」の一つ。<br>
+        使い方を知った人が、一番おもしろいものを作れるよ！
+      </div>
+    `,
+    quiz: {
+      question: 'AIはなんの略？',
+      options: ['人工知能', '自動インターネット', 'アドバンスドアイコン', '人工インク'],
+      answer: 0,
+      ok: '🎉 正解！ AI は「Artificial Intelligence（アーティフィシャル・インテリジェンス）」＝人工知能 の略だよ！',
+      ng: '🤔 ざんねん！ AI は「Artificial Intelligence」＝「人工知能」の略だよ。'
+    }
+  },
+  {
+    id: 1,
+    color: '#34C88A',
+    iconBg: '#E8FBF2',
+    icon: '💬',
+    tag: 'STEP 2',
+    tagColor: '#E8FBF2',
+    tagText: '#34C88A',
+    title: 'Claudeと話してみよう（デモ）',
+    body: `
+      <p class="lesson-text">先生がClaudeに質問したときの例を見てみよう！<br>
+      どんな答えが返ってくるか、ちゃんと読んでみてね。</p>
+    `,
+    demos: [
+      {
+        q: 'カレーの作り方をおしえて！',
+        a: 'もちろん！カレーの作り方を教えるね。\n\n①たまねぎ、にんじん、じゃがいも、お肉を切る\n②油でたまねぎをよく炒める（あめ色になるまで！）\n③お肉を入れてさらに炒める\n④野菜を加えて水を入れて煮る（15分くらい）\n⑤ルウを入れてとかして完成！\n\n甘めが好きならはちみつを少し入れるとおいしいよ🍛'
+      },
+      {
+        q: 'なぞなぞをだして！',
+        a: 'じゃあいくよ〜！\n\n🎯 なぞなぞ：パンはパンでも、食べられないパンはなーんだ？\n\n・・・ちょっと考えてみて！\n\n正解は「フライパン」！\nフライパンは「パン」がついてるけど食べられないよね😄\nわかった？'
+      }
+    ],
+    quiz: null,
+    hasChat: false
+  },
+  {
+    id: 2,
+    color: '#7C6FE0',
+    iconBg: '#F0EEFF',
+    icon: '⌨️',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#7C6FE0',
+    title: 'じぶんでClaudeに聞いてみよう',
+    body: `
+      <p class="lesson-text">いよいよ自分で質問してみよう！<br>
+      下のチャット画面にじぶんで文を打ち込んで、Claudeに話しかけてみてね。</p>
+    `,
+    mission: {
+      text: '🎯 ミッション：Claudeに何でも聞いてみよう！うまく伝わったかな？うまく伝わらなかったときは、聞き方を変えてみよう。',
+      hints: ['好きな食べ物のレシピを聞く', 'なぞなぞを出してもらう', '地球はなぜ丸いの？', '宿題のアイデアをくれ！']
+    },
+    hasChat: true,
+    quiz: null
+  },
+  {
+    id: 3,
+    color: '#F5A623',
+    iconBg: '#FFF8EB',
+    icon: '🤔',
+    tag: 'STEP 4',
+    tagColor: '#FFF8EB',
+    tagText: '#c47800',
+    title: 'Claudeが苦手なことを知ろう',
+    body: `
+      <p class="lesson-text">Claudeはすごく便利だけど、苦手なこともあるんだ。<br>
+      下の質問を試してみてね。どんな答えが返ってくるかな？</p>
+    `,
+    mission: {
+      text: '🎯 ミッション：下のボタンの質問をClaudeに聞いてみよう。何が苦手かな？',
+      hints: ['今日の給食はなに？', 'いまの時間を教えて', '私の名前はなに？', '未来を予言して！']
+    },
+    hasChat: true,
+    info: `<div class="info-box"><b>💡 気づいたこと：</b><br>
+      Claudeはリアルタイムの情報（今日のこと・場所・天気）は知らないよ。<br>
+      <b>使う人間が考えることがすごく大事</b>なんだ！</div>`,
+    quiz: null
+  },
+  {
+    id: 4,
+    color: '#F26B5B',
+    iconBg: '#FFF0EE',
+    icon: '🏆',
+    tag: 'STEP 5',
+    tagColor: '#FFF0EE',
+    tagText: '#c04040',
+    title: 'まとめ：今日のはっけん！',
+    body: `
+      <p class="lesson-text">今日はClaudeと話して、AIについていろんなことを体験したね。<br>
+      最後のクイズでまとめを確認しよう！</p>
+    `,
+    tryList: [
+      'AIは「人工知能」のこと',
+      'Claudeは質問に答えてくれる便利なAI',
+      '聞き方（プロンプト）によって答えが変わる',
+      'AIが知らないこともある（リアルタイム情報など）',
+      'AIは道具！使う人間の考え方が大切'
+    ],
+    quiz: {
+      question: 'AIを上手に使うためにいちばん大切なのは？',
+      options: [
+        'AIにすべておまかせする',
+        '自分で考えながらAIを使う',
+        'AIの言ったことをそのままコピーする',
+        'AIにしか答えられないことを聞く'
+      ],
+      answer: 1,
+      ok: '🌟 すばらしい！ 自分の頭で考えながらAIを使うのが、いちばん大切だよ！ AIはあくまで「道具」。使いこなすのはきみ自身だ！',
+      ng: '🤔 もう少し！ 正解は「自分で考えながらAIを使う」だよ。AIは便利な道具だけど、何が正しいかを判断するのは人間の大切な仕事だよ！'
+    }
+  }
+];
+
+// ===== STATE =====
+
+// ===== RENDER =====
+// ===== RENDER =====
+function renderApp() {
+  renderProgress();
+  renderLesson(state.currentStep);
+}
+
+function renderProgress() {
+  const steps = document.getElementById('progress-steps');
+  const text = document.getElementById('progress-text');
+  text.textContent = `${state.completedSteps.length} / 5 完了`;
+  steps.innerHTML = LESSONS.map((l, i) => {
+    let cls = 'step-pill';
+    if (state.completedSteps.includes(i)) cls += ' done';
+    else if (i === state.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})" title="${l.title}"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  if (i <= Math.max(...state.completedSteps, 0) || i === 0) {
+    state.currentStep = i;
+    renderApp();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function renderLesson(idx) {
+  const lesson = LESSONS[idx];
+  const container = document.getElementById('lesson-container');
+
+  let html = `
+    <div class="lesson-card">
+      <div class="lesson-header">
+        <div class="lesson-icon" style="background:${lesson.iconBg}">${lesson.icon}</div>
+        <div class="lesson-meta">
+          <span class="lesson-step-tag" style="background:${lesson.tagColor};color:${lesson.tagText}">${lesson.tag}</span>
+          <div class="lesson-title">${lesson.title}</div>
+        </div>
+      </div>
+      <div class="lesson-body">
+        ${lesson.body}
+        ${lesson.info || ''}
+  `;
+
+  // Try list
+  if (lesson.tryList) {
+    html += `<ul class="try-list">` + lesson.tryList.map(t => `<li>${t}</li>`).join('') + `</ul>`;
+  }
+
+  // Demo chats
+  if (lesson.demos) {
+    lesson.demos.forEach(d => {
+      html += `
+        <div class="demo-chat">
+          <div class="demo-chat-header">💬 こんなふうに答えてくれるよ！</div>
+          <div class="demo-bubble-wrap">
+            <div style="align-self:flex-end">
+              <div class="bubble-label" style="color:#4A90E2;text-align:right">あなた</div>
+              <div class="bubble bubble-user">${escHtml(d.q)}</div>
+            </div>
+            <div style="align-self:flex-start">
+              <div class="bubble-label" style="color:#7C6FE0">Claude 🤖</div>
+              <div class="bubble bubble-ai">${escHtml(d.a).replace(/\n/g, '<br>')}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Mission
+  if (lesson.mission) {
+    html += `
+      <div class="mission-box">
+        <div class="mission-title">🎯 ミッション</div>
+        <div class="mission-text">${lesson.mission.text}</div>
+        <div class="hint-chips">
+          ${lesson.mission.hints.map(h => `<span class="hint-chip" onclick="fillHint(this,'${escHtml(h)}')">${escHtml(h)}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Chat → claude.ai launcher
+  if (lesson.hasChat) {
+    const launched = state.chatCounts[idx] > 0;
+    html += `
+      <div class="claude-launcher">
+        <div class="launcher-inner">
+          <div class="launcher-logo">🤖</div>
+          <div class="launcher-title">Claudeを開いて話しかけてみよう！</div>
+          <div class="launcher-sub">下のボタンを押すと、本物のClaudeが別のタブで開くよ。<br>ミッションのお題を試してみてね！</div>
+          <button class="btn-launch" onclick="launchClaude(${idx})">
+            🚀 Claudeを開く
+          </button>
+          ${launched ? '<div class="launcher-done">✅ 開いたね！体験できたら下の「次へ」ボタンを押してね。</div>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // Quiz
+  if (lesson.quiz) {
+    const answered = state.quizAnswered[idx];
+    html += `
+      <div style="margin-bottom:16px">
+        <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(lesson.quiz.question)}</div>
+        <div class="quiz-options">
+    `;
+    lesson.quiz.options.forEach((opt, oi) => {
+      let cls = 'quiz-opt';
+      if (answered !== undefined) {
+        if (oi === lesson.quiz.answer) cls += ' correct';
+        else if (oi === answered && answered !== lesson.quiz.answer) cls += ' wrong';
+      }
+      html += `<button class="quiz-opt${answered!==undefined ? (oi===lesson.quiz.answer?' correct':oi===answered?' wrong':'') : ''}" onclick="answerQuiz(${idx},${oi})" ${answered!==undefined?'disabled':''}>${escHtml(opt)}</button>`;
+    });
+    html += `</div>`;
+    if (answered !== undefined) {
+      const ok = answered === lesson.quiz.answer;
+      html += `<div class="quiz-feedback show ${ok?'ok':'ng'}">${ok ? lesson.quiz.ok : lesson.quiz.ng}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Next button
+  const isCompleted = state.completedSteps.includes(idx);
+  const isLast = idx === LESSONS.length - 1;
+  const needQuiz = lesson.quiz && state.quizAnswered[idx] === undefined;
+  const needChat = lesson.hasChat && (state.chatCounts[idx] || 0) < 1;
+
+  if (!isCompleted && !isLast) {
+    const disabled = needQuiz || needChat;
+    html += `<button class="btn-next" id="btn-next-${idx}" onclick="nextStep(${idx})" ${disabled?'disabled':''}>${disabled ? (needChat ? '🚀 まずClaudeを開いてみよう！' : '❓ クイズに答えてから進もう！') : '次のステップへ ➡️'}</button>`;
+  } else if (!isCompleted && isLast) {
+    const disabled = needQuiz;
+    html += `<button class="btn-next" style="background:var(--coral)" id="btn-next-${idx}" onclick="complete()" ${disabled?'disabled':''}>${disabled ? '❓ クイズに答えてから完了！' : '🏆 授業を完了する！'}</button>`;
+  }
+
+  if (isCompleted && !isLast) {
+    html += `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  }
+
+  html += `</div></div>`;
+
+  // Complete card if all done
+  if (state.completedSteps.length === LESSONS.length) {
+    html += renderCompleteCard();
+  }
+
+  container.innerHTML = html;
+}
+
+function renderCompleteCard() {
+  const totalChats = state.chatCounts.reduce((a, b) => a + b, 0);
+  const minutes = Math.floor((Date.now() - state.startTime) / 60000);
+  return `
+    <div class="complete-card">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">授業クリア！</div>
+      <div class="complete-sub">${escHtml(state.name)}さん、お疲れさま！<br>今日はAIのことをたくさん学んだね。</div>
+      <div class="stars">
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-num">5</div>
+          <div class="summary-label">ステップ完了</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num">${totalChats}</div>
+          <div class="summary-label">Claudeとの会話数</div>
+        </div>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7">
+        「AIは現代の文房具」。<br>
+        使いこなすのはきみ自身だよ！✏️
+      </div>
+    </div>
+  `;
+}
+
+
+// ===== ACTIONS =====
+// ===== ACTIONS =====
+function nextStep(idx) {
+  const isNew = !state.completedSteps.includes(idx);
+  if (isNew) state.completedSteps.push(idx);
+  state.currentStep = idx + 1;
+  saveState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+  if (isNew) setTimeout(() => awardBadgePopup(idx), 600);
+}
+
+function complete() {
+  const idx = LESSONS.length - 1;
+  const isNew = !state.completedSteps.includes(idx);
+  if (isNew) state.completedSteps.push(idx);
+  saveState();
+  renderApp();
+  showToast('🎉 授業完了！すごい！');
+  if (isNew) setTimeout(() => awardBadgePopup(idx), 800);
+}
+
+function answerQuiz(lessonIdx, optionIdx) {
+  state.quizAnswered[lessonIdx] = optionIdx;
+  saveState();
+  renderLesson(lessonIdx);
+}
+
+function fillHint(el, text) {
+  // ヒントチップをクリックしたらclipboardにコピーしてlaunch
+  navigator.clipboard.writeText(text).catch(()=>{});
+  showToast('📋 コピーしたよ！Claudeに貼り付けてね');
+}
+
+function launchClaude(lessonIdx) {
+  window.open('https://claude.ai/new', '_blank');
+  state.chatCounts[lessonIdx] = (state.chatCounts[lessonIdx] || 0) + 1;
+  saveState();
+  // Re-render to show "opened" state and unlock next button
+  renderLesson(lessonIdx);
+  showToast('🚀 Claudeが開いたよ！話しかけてみよう！');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+
+
+// ===== BOOT =====
+loadState();
+if (state.name) {
+  document.getElementById('welcome-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = state.name + 'さん';
+  renderApp();
+}
+</script>
+
+</script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .top-hero {
+    background: linear-gradient(160deg, #EBF4FF 0%, #F0EEFF 50%, #E8FBF2 100%);
+    padding: 36px 20px 28px;
+    text-align: center;
+  }
+  .top-title {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .top-sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 20px; }
+  .name-form { display: flex; gap: 10px; max-width: 400px; margin: 0 auto 8px; }
+  .name-form input {
+    flex: 1; padding: 11px 14px; border: 2px solid #E0E4F0; border-radius: 10px;
+    font-size: 15px; font-family: 'Noto Sans JP', sans-serif; outline: none;
+    color: var(--ink); transition: border-color 0.2s;
+  }
+  .name-form input:focus { border-color: var(--sky); }
+  .btn-setname {
+    padding: 11px 18px; background: var(--sky); color: white; border: none;
+    border-radius: 10px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.2s;
+  }
+  .btn-setname:hover { background: var(--sky-dark); }
+  .class-note { font-size: 12px; color: var(--ink-soft); }
+  .main-body { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+  .section-label {
+    font-size: 13px; font-weight: 700; color: var(--ink-soft);
+    margin: 20px 0 10px; padding-left: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .lesson-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+  .lesson-row {
+    background: var(--white); border-radius: 14px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-card); cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none; color: inherit;
+  }
+  .lesson-row:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .lesson-row.locked { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+  .lesson-num {
+    width: 46px; height: 46px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .lesson-info { flex: 1; }
+  .lesson-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .lesson-desc { font-size: 12px; color: var(--ink-soft); }
+  .lesson-status { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+  .status-done { background: var(--mint-light); color: #1a7a4a; }
+  .status-next { background: var(--sky-light); color: var(--sky-dark); }
+  .status-locked { background: #F1EFE8; color: #aaa; }
+  .overall-card {
+    background: var(--white); border-radius: 14px; padding: 16px 18px;
+    box-shadow: var(--shadow-card); margin-bottom: 20px;
+  }
+  .overall-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .overall-top-label { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .overall-count { font-size: 13px; color: var(--ink-soft); }
+  .overall-bar-bg { height: 8px; background: #E0E4F0; border-radius: 99px; overflow: hidden; }
+  .overall-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sky), var(--mint)); border-radius: 99px; transition: width 0.8s ease; }
+  .badge-summary { background: var(--white); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-card); margin-bottom: 20px; }
+  .badge-summary-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+  .badge-mini-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge-mini { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .badge-mini-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .badge-mini-circle.locked { filter: grayscale(1) opacity(0.3); }
+  .badge-mini-name { font-size: 10px; color: var(--ink-soft); font-weight: 700; text-align: center; max-width: 50px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo"><span>🤖</span> 門司港AI教室</div>
+  <div class="header-right">
+    <button class="mypage-btn" onclick="openMypage()">🏅 バッジ</button>
+    <div class="name-badge" id="header-name">ゲスト</div>
+  </div>
+</div>
+
+<div class="top-hero">
+  <div class="top-title">🤖 門司港プログラミング教室<br>AI授業へようこそ！</div>
+  <div class="top-sub">なまえを入力して、授業をえらんでね。</div>
+  <div class="name-form">
+    <input type="text" id="name-input" placeholder="なまえ（例：たろう）" maxlength="20"
+      onkeydown="if(event.key==='Enter')setName()">
+    <button class="btn-setname" onclick="setName()">決定</button>
+  </div>
+  <div class="class-note" id="class-note"></div>
+</div>
+
+<div class="main-body">
+
+  <div class="overall-card">
+    <div class="overall-top">
+      <div class="overall-top-label">📚 全体の進み具合</div>
+      <div class="overall-count" id="overall-label">0 / 14 回完了</div>
+    </div>
+    <div class="overall-bar-bg">
+      <div class="overall-bar-fill" id="overall-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="badge-summary">
+    <div class="badge-summary-title">🏅 ゲットしたバッジ</div>
+    <div class="badge-mini-row" id="badge-mini-row"></div>
+  </div>
+
+  <div id="lesson-list-container"></div>
+
+</div>
+
+<!-- MYPAGE OVERLAY -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label">授業の進み具合</div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const ALL_LESSONS = [
+  { id:1,  file:'lesson1.html', title:'AIってなんだろう？',     desc:'AIのきほんをたいけんしよう',       color:'#4A90E2', icon:'🌟', block:1 },
+  { id:2,  file:'lesson2.html', title:'聞き方を変えると変わる', desc:'プロンプトのくふうを学ぼう',       color:'#34C88A', icon:'💬', block:1 },
+  { id:3,  file:'lesson3.html', title:'役割を与えてみよう',     desc:'AIにペルソナをつけてみる',         color:'#7C6FE0', icon:'🎭', block:1 },
+  { id:4,  file:'lesson4.html', title:'AIに教えてあげよう',     desc:'じょうほうを与えると精度が上がる', color:'#F5A623', icon:'📚', block:1 },
+  { id:5,  file:'lesson5.html', title:'詩・物語を作る',         desc:'AIと共作してみよう',               color:'#F26B5B', icon:'✍️', block:2 },
+  { id:6,  file:'lesson6.html', title:'クイズ・なぞなぞを作る', desc:'友達に出せるクイズを作ろう',       color:'#4A90E2', icon:'❓', block:2 },
+  { id:7,  file:'lesson7.html', title:'北九州を調べよう',       desc:'地元の情報をAIで調査する',         color:'#34C88A', icon:'🏙️', block:2 },
+  { id:8,  file:'lesson8.html', title:'発表資料を作る',         desc:'AIで構成→自分で肉付け',           color:'#7C6FE0', icon:'📊', block:2 },
+  { id:9,  file:'lesson9.html', title:'自由制作①',             desc:'テーマを決めて作り始めよう',       color:'#F5A623', icon:'🎨', block:2 },
+  { id:10, file:'lesson10.html',title:'自由制作②・発表',       desc:'完成→みんなに発表しよう',          color:'#F26B5B', icon:'🏆', block:2 },
+  { id:11, file:'lesson11.html',title:'AIはウソをつく？',       desc:'ハルシネーションを体験・検証',      color:'#4A90E2', icon:'🤔', block:3 },
+  { id:12, file:'lesson12.html',title:'誰が作ったの？',         desc:'著作権・クレジットを考える',       color:'#34C88A', icon:'⚖️', block:3 },
+  { id:13, file:'lesson13.html',title:'AIで社会を良くする',     desc:'北九州の課題×AIでアイデア出し',    color:'#7C6FE0', icon:'🌍', block:3 },
+  { id:14, file:'lesson14.html',title:'チャレンジ★',           desc:'AIに判断させる設計を考える',       color:'#F5A623', icon:'⭐', block:3 },
+];
+const BLOCK_NAMES = {1:'ブロック①　AIと仲良くなる', 2:'ブロック②　AIと一緒に作る', 3:'ブロック③　AIを問い直す'};
+const AVAILABLE = [1, 2];
+
+loadState();
+if (state.name) {
+  document.getElementById('name-input').value = state.name;
+  document.getElementById('header-name').textContent = state.name + 'さん';
+}
+renderAll();
+
+function setName() {
+  const val = document.getElementById('name-input').value.trim();
+  if (!val) { showToast('なまえを入力してね！'); return; }
+  state.name = val;
+  if (!state.classCode) {
+    const code = prompt('クラスコードを入力してね（先生に聞いてね。なければキャンセルでOK）') || 'なし';
+    state.classCode = code;
+  }
+  saveState();
+  document.getElementById('header-name').textContent = val + 'さん';
+  showToast('✅ ' + val + 'さんでセットしたよ！');
+  renderAll();
+}
+
+function renderAll() {
+  renderProgress();
+  renderBadgeMini();
+  renderLessons();
+}
+
+function renderProgress() {
+  const done = Object.values(state.lessonCompleted || {}).filter(Boolean).length;
+  document.getElementById('overall-label').textContent = done + ' / ' + ALL_LESSONS.length + ' 回完了';
+  document.getElementById('overall-bar').style.width = Math.round(done / ALL_LESSONS.length * 100) + '%';
+}
+
+function renderBadgeMini() {
+  document.getElementById('badge-mini-row').innerHTML = BADGES.map((b, i) => {
+    const earned = i < 4
+      ? !!(state.lessonCompleted || {})[i + 1]
+      : Object.values(state.lessonCompleted || {}).filter(Boolean).length >= ALL_LESSONS.length;
+    return `<div class="badge-mini">
+      <div class="badge-mini-circle ${earned ? '' : 'locked'}"
+           style="${earned ? 'background:' + b.bg + ';border:2px solid ' + b.border : ''}">
+        <svg viewBox="0 0 100 100" width="38" height="38" xmlns="http://www.w3.org/2000/svg">${b.svgContent}</svg>
+      </div>
+      <div class="badge-mini-name">${earned ? b.name : '？？？'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderLessons() {
+  let html = '';
+  let curBlock = 0;
+  ALL_LESSONS.forEach(l => {
+    if (l.block !== curBlock) {
+      curBlock = l.block;
+      html += `<div class="section-label">${BLOCK_NAMES[curBlock]}</div><div class="lesson-list">`;
+    }
+    const avail = AVAILABLE.includes(l.id);
+    const done  = !!(state.lessonCompleted || {})[l.id];
+    const statusHtml = done  ? '<span class="lesson-status status-done">✅ 完了</span>'
+                     : avail ? '<span class="lesson-status status-next">▶ やってみよう</span>'
+                     :         '<span class="lesson-status status-locked">🔒 準備中</span>';
+    const href = avail ? l.file + '?name=' + encodeURIComponent(state.name || '') : '#';
+    html += `<a class="lesson-row${avail ? '' : ' locked'}" href="${href}">
+      <div class="lesson-num" style="background:${l.color}">${l.icon}</div>
+      <div class="lesson-info">
+        <div class="lesson-name">第${l.id}回　${l.title}</div>
+        <div class="lesson-desc">${l.desc}</div>
+      </div>
+      ${statusHtml}
+    </a>`;
+    // close list div at block end or last item
+    const next = ALL_LESSONS[ALL_LESSONS.indexOf(l) + 1];
+    if (!next || next.block !== curBlock) html += '</div>';
+  });
+  document.getElementById('lesson-list-container').innerHTML = html;
+}
+</script>
+</body>
+</html>

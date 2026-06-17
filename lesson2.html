@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第2回：聞き方を変えると変わる | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ===== 比較カード ===== */
+  .compare-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .compare-card {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .compare-header {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-prompt {
+    background: var(--white);
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--ink-mid);
+    border-bottom: 1px solid #F0F2FA;
+    line-height: 1.6;
+  }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result {
+    background: #FAFBFF;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    min-height: 56px;
+    white-space: pre-wrap;
+  }
+  .compare-result.loading {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* バージョンラベル */
+  .v-basic  { background: #F1EFE8; color: #5F5E5A; }
+  .v-good   { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great  { background: var(--mint-light); color: #1a7a4a; }
+
+  /* ===== 試す入力エリア ===== */
+  .try-area {
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .try-area-header {
+    background: var(--purple);
+    color: white;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .try-topic-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F0F2FA;
+  }
+  .try-topic-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .topic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .topic-chip {
+    background: var(--bg);
+    border: 1.5px solid #E0E4F0;
+    color: var(--ink-mid);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .topic-chip:hover,
+  .topic-chip.active {
+    background: var(--purple);
+    color: white;
+    border-color: var(--purple);
+  }
+  .try-versions {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .try-version-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F0F2FA;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .try-version-row:last-child { border-bottom: none; }
+  .version-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .try-prompt-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    padding: 6px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid #E0E4F0;
+    min-height: 40px;
+    cursor: text;
+  }
+  .btn-try-all {
+    width: calc(100% - 32px);
+    margin: 12px 16px;
+    padding: 14px;
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-try-all:hover { background: #6258c8; }
+  .btn-try-all:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ===== 結果比較 ===== */
+  .result-compare {
+    display: none;
+    gap: 0;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 16px;
+  }
+  .result-compare.show { display: flex; }
+  .result-row {
+    border-bottom: 1px solid #F0F2FA;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row-header {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+  }
+  .result-row-body {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    background: #FAFBFF;
+    white-space: pre-wrap;
+    min-height: 48px;
+  }
+  .result-row-body.loading {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* ===== 発見ボックス ===== */
+  .discovery-box {
+    background: var(--amber-light);
+    border: 2px solid var(--amber);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .discovery-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #b87d00;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .discovery-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .discovery-item {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+  }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  /* ===== チャレンジ（中学生向け）===== */
+  .challenge-box {
+    border: 2px dashed #7C6FE0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: var(--purple-light);
+    margin-bottom: 16px;
+  }
+  .challenge-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .challenge-text {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- PROGRESS -->
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>📚 第2回のステップ</span>
+        <span id="progress-text">0 / 5 完了</span>
+      </div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label">
+        <span>気づく</span>
+        <span>比べる</span>
+        <span>試す</span>
+        <span>まとめ</span>
+        <span>チャレンジ</span>
+      </div>
+    </div>
+
+    <!-- LESSON CONTENT -->
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<!-- MYPAGE / BADGE POPUP -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+// ===== LESSON DATA =====
+const LESSON_ID = 2;
+
+const STEPS = [
+  // STEP 0: 気づく
+  {
+    icon: '💡',
+    iconBg: '#FFF8EB',
+    tag: 'STEP 1',
+    tagColor: '#FFF8EB',
+    tagText: '#b87d00',
+    title: '聞き方で、答えが変わる！',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">第1回でClaudeに質問してみたよね。<br>
+      実は<strong>同じことを聞いても、聞き方によって答えが全然変わる</strong>んだ！</p>
+      <p class="lesson-text">たとえば「カレーを教えて」と聞くのと、「小学3年生でも作れるカレーのレシピを箇条書きで教えて」と聞くのでは、もらえる答えが大きく違うよ。</p>
+      <div class="info-box">
+        <b>📌 今日学ぶこと：</b><br>
+        AIへの「お願いの仕方」を<b>プロンプト</b>というよ。<br>
+        プロンプトを工夫すると、AIがもっと役に立つ答えを返してくれるようになる！
+      </div>
+    `,
+    quiz: {
+      question: 'プロンプトってなんのこと？',
+      options: ['AIの名前', 'AIへのお願いの仕方・入力する言葉', 'AIが使うコンピューター', 'インターネットの速さ'],
+      answer: 1,
+      ok: '🎉 正解！プロンプトはAIに渡す「指示・質問・お願い」のことだよ。プロンプトが上手になるほど、AIが助けになる！',
+      ng: '🤔 惜しい！プロンプトとは、AIに入力する「言葉・指示・質問」のことだよ。英語のpromptには「うながす」という意味があるんだ。'
+    }
+  },
+
+  // STEP 1: 比べる（デモ）
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '3つのプロンプトを比べてみよう',
+    type: 'compare',
+    content: `
+      <p class="lesson-text">「北九州のことを教えて」というテーマで、3つの違う聞き方をClaudeに送ってみたよ。<br>
+      答えがどれだけ変わるか見てみよう！</p>
+    `,
+    examples: [
+      {
+        label: 'バージョン①　ふつうに聞く',
+        labelClass: 'v-basic',
+        prompt: '北九州のことを教えて',
+        response: '北九州市は福岡県にある政令指定都市です。人口は約90万人で、鉄鋼業で発展した工業都市として知られています。門司港レトロや小倉城などの観光地があります。'
+      },
+      {
+        label: 'バージョン②　くわしく指定する',
+        labelClass: 'v-good',
+        prompt: '北九州のことを小学4年生にわかるように教えて。面白いポイントを3つ挙げてね。',
+        response: '北九州の面白いポイントを3つ紹介するね！\n\n①「鉄のまち」として有名\n昔、日本で初めて大きな鉄工場（八幡製鉄所）ができた場所なんだ。今でも世界遺産に登録されているよ！\n\n②門司港がオシャレ\n明治時代の洋館がたくさん残っていて、レトロな雰囲気を楽しめるよ。バナナのたたき売りが始まった場所でもあるんだ！\n\n③焼きうどんの発祥地\n日本で初めて焼きうどんが作られたのが小倉だよ。今でも名物料理として愛されているんだ！'
+      },
+      {
+        label: 'バージョン③　役割＋条件を指定する',
+        labelClass: 'v-great',
+        prompt: 'あなたは北九州の観光ガイドです。小学4年生の子どもに、北九州の魅力を伝えてください。「なぜそれが面白いのか」という理由も含めて、3つ教えてね。',
+        response: 'ようこそ北九州へ！ガイドのClaudeだよ。特別に面白いポイントを教えるね！\n\n🏭 ①世界遺産「八幡製鉄所」\n→なぜ面白い？日本が「ものづくりの国」になれたのは、ここから始まったからだよ。明治時代に建てられた建物が今も残っていて、タイムスリップしたみたいな気分になれる！\n\n🚢 ②門司港レトロ\n→なぜ面白い？100年以上前の建物がそのまま残っていて、映画やドラマのセットみたいな場所なんだ。バナナのたたき売りというユニークな文化も生まれた場所！\n\n🍜 ③焼きうどん発祥の地・小倉\n→なぜ面白い？戦後の食材が少なかった時代に、うどんを焼いて作ったのが始まり。苦労から生まれた料理が、今では全国区の名物になったんだよ！'
+      }
+    ]
+  },
+
+  // STEP 2: 試す
+  {
+    icon: '⌨️',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'じぶんでプロンプトを工夫してみよう',
+    type: 'try',
+    content: `
+      <p class="lesson-text">今度はじぶんで試してみよう！<br>
+      テーマを選んで、3つの聞き方でClaudeに聞いてみてね。</p>
+    `,
+    topics: [
+      { label: '🍕 ピザ', base: 'ピザ' },
+      { label: '🐬 イルカ', base: 'イルカ' },
+      { label: '⚽ サッカー', base: 'サッカー' },
+      { label: '🌙 宇宙', base: '宇宙' },
+      { label: '🏯 北九州', base: '北九州' },
+    ]
+  },
+
+  // STEP 3: まとめ
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：プロンプトの3つのコツ',
+    type: 'summary',
+    content: `
+      <p class="lesson-text">今日は「聞き方を変えると答えが変わる」ことを体験したね。<br>まとめてみよう！</p>
+    `,
+    discoveries: [
+      { text: '<b>くわしく指定する：</b>「小学4年生にわかるように」「3つ教えて」など、条件を足すと答えが絞られる' },
+      { text: '<b>役割を与える：</b>「あなたは〇〇です」と伝えると、その視点から答えてくれる' },
+      { text: '<b>理由を求める：</b>「なぜ面白いかも教えて」と聞くと、深い答えが返ってくる' },
+    ],
+    quiz: {
+      question: 'プロンプトを工夫するとき、特に効果的なのはどれ？',
+      options: [
+        '短く「教えて」とだけ送る',
+        '「小学生向けに」「3つ」など条件を加える',
+        '同じ言葉を何回も繰り返す',
+        '英語で聞く'
+      ],
+      answer: 1,
+      ok: '🌟 正解！条件を加えることで、自分に合った答えが返ってくるよ。「誰向けに」「いくつ」「どんな形式で」を意識しよう！',
+      ng: '🤔 惜しい！正解は「条件を加える」だよ。「小学生向けに」「3つ」「箇条書きで」など、具体的に指定するほど答えが使いやすくなるんだ。'
+    }
+  },
+
+  // STEP 4: チャレンジ（中学生向け）
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：プロンプトを設計してみよう',
+    type: 'challenge',
+    content: `
+      <p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ。<br>
+      もっと深くプロンプトを考えてみよう！</p>
+    `,
+    challenges: [
+      {
+        level: '★',
+        title: '「最強のプロンプト」を作る',
+        desc: '自分のテーマで「役割＋対象＋条件＋出力形式」を全部入れたプロンプトを作って、Claudeに送ってみよう。',
+        hint: '例：「あなたは料理研究家です。小学5年生の子どもに、10分で作れる朝ごはんレシピを3つ教えてください。材料・手順を箇条書きで。」'
+      },
+      {
+        level: '★★',
+        title: 'プロンプトの「型」を発見する',
+        desc: '今日学んだ3つのコツ以外に、どんな工夫をするともっといい答えが返ってくると思う？自分で試して発見してみよう。',
+        hint: 'ヒント：「例を挙げて」「反対意見も教えて」「表にまとめて」など試してみよう。'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）プロンプトエンジニアリングを調べる',
+        desc: '「プロンプトエンジニアリング」という言葉を調べてみよう。これは今、社会でどんな仕事に使われている？Claudeに聞いてまとめてみよう。',
+        hint: 'キーワード：few-shot prompting、chain of thought、system prompt'
+      }
+    ]
+  }
+];
+
+// ===== STATE =====
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  triedCompare: false,
+  selectedTopic: null,
+  compareResults: null
+};
+
+// ===== INIT =====
+function init() {
+  loadState();
+  // Restore lesson-specific state
+  const saved = JSON.parse(localStorage.getItem('lesson2-state') || '{}');
+  stepState = { ...stepState, ...saved };
+
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson2-state', JSON.stringify(stepState));
+  // Mark lesson as started in global state
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) {
+    state.lessonCompleted[LESSON_ID] = true;
+  }
+  saveState();
+}
+
+// ===== RENDER =====
+function renderApp() {
+  renderProgress();
+  renderStep(stepState.currentStep);
+}
+
+function renderProgress() {
+  const total = STEPS.length;
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + total + ' 完了';
+  const pills = document.getElementById('progress-steps');
+  pills.innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const maxReached = Math.max(...stepState.completedSteps, 0);
+  if (i <= maxReached + 1) {
+    stepState.currentStep = i;
+    renderApp();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `
+    <div class="lesson-card">
+      <div class="lesson-header">
+        <div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div>
+        <div class="lesson-meta">
+          <span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span>
+          <div class="lesson-title">${step.title}</div>
+        </div>
+      </div>
+      <div class="lesson-body">
+        ${step.content}
+  `;
+
+  if (step.type === 'intro') html += renderIntro(step, idx);
+  else if (step.type === 'compare') html += renderCompare(step, idx);
+  else if (step.type === 'try') html += renderTry(step, idx);
+  else if (step.type === 'summary') html += renderSummaryStep(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+
+  // Complete card
+  if (stepState.completedSteps.length === STEPS.length) {
+    html += renderCompleteCard();
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== STEP RENDERERS =====
+function renderIntro(step, idx) {
+  return renderQuiz(step.quiz, idx);
+}
+
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach((ex, i) => {
+    html += `
+      <div class="compare-card">
+        <div class="compare-header ${ex.labelClass}">${ex.label}</div>
+        <div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div>
+        <div class="compare-result">${escHtml(ex.response)}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  html += `
+    <div class="discovery-box">
+      <div class="discovery-title">🔍 気づいたこと</div>
+      <div class="discovery-items">
+        <div class="discovery-item">バージョン①は短くて普通の答え。情報は合ってるけどシンプルすぎる。</div>
+        <div class="discovery-item">バージョン②は「小学生向けに」「3つ」と指定したら、ぐっとわかりやすくなった！</div>
+        <div class="discovery-item">バージョン③は「観光ガイドとして」「理由も含めて」と伝えたら、もっと深くて面白い答えが返ってきた！</div>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+function renderTry(step, idx) {
+  const topic = stepState.selectedTopic;
+  const results = stepState.compareResults;
+
+  let topicHtml = `
+    <div class="try-area">
+      <div class="try-area-header">🎯 テーマを選ぼう</div>
+      <div class="try-topic-row">
+        <div class="try-topic-label">どのテーマで試す？</div>
+        <div class="topic-chips">
+          ${step.topics.map(t => `
+            <span class="topic-chip ${topic && topic.base === t.base ? 'active' : ''}"
+              onclick="selectTopic('${escHtml(t.base)}','${escHtml(t.label)}')">${t.label}</span>
+          `).join('')}
+        </div>
+      </div>
+  `;
+
+  if (topic) {
+    const p1 = topic.base + 'について教えて';
+    const p2 = topic.base + 'について小学生にわかるように教えて。面白いポイントを3つ挙げてね。';
+    const p3 = 'あなたは' + topic.base + 'の専門家です。小学生に' + topic.base + 'の魅力を、「なぜ面白いか」という理由とともに3つ教えてください。';
+
+    topicHtml += `
+      <div class="try-versions">
+        <div class="try-version-row">
+          <span class="version-tag v-basic">①ふつう</span>
+          <div class="try-prompt-text">${escHtml(p1)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-good">②くわしく</span>
+          <div class="try-prompt-text">${escHtml(p2)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-great">③役割＋条件</span>
+          <div class="try-prompt-text">${escHtml(p3)}</div>
+        </div>
+      </div>
+      <button class="btn-try-all" id="btn-send-all" onclick="sendAllPrompts()">
+        🚀 3つ全部Claudeで開く
+      </button>
+    `;
+  }
+
+  topicHtml += '</div>';
+
+  // Tried indicator
+  if (stepState.triedCompare) {
+    topicHtml += `
+      <div class="launcher-done" style="text-align:center;margin-bottom:12px">
+        ✅ Claudeで試したね！3つの答えの違い、気づいた？
+      </div>
+    `;
+  }
+
+  return topicHtml;
+}
+
+function renderSummaryStep(step, idx) {
+  let html = `
+    <div class="discovery-box">
+      <div class="discovery-title">💡 プロンプトの3つのコツ</div>
+      <div class="discovery-items">
+        ${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step, idx) {
+  let html = `
+    <div class="challenge-box">
+      <div class="challenge-title">⭐ チャレンジミッション</div>
+      <div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div>
+    </div>
+  `;
+
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px">
+          <span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span>
+        </div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div>
+      <div class="quiz-options">
+  `;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) {
+      if (oi === quiz.answer) cls += ' correct';
+      else if (oi === answered) cls += ' wrong';
+    }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) {
+    const ok = answered === quiz.answer;
+    html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx];
+  const isLast = idx === STEPS.length - 1;
+  const isCompleted = stepState.completedSteps.includes(idx);
+
+  // Determine if blocked
+  const needQuiz = (step.quiz) && stepState.quizAnswered[idx] === undefined;
+  const needTry  = step.type === 'try' && !stepState.triedCompare;
+  const needTopic = step.type === 'try' && !stepState.selectedTopic;
+  const blocked = needQuiz || needTry || needTopic;
+
+  const hint = needTopic ? '👆 まずテーマを選んでね！'
+              : needTry  ? '🚀 まず3つのプロンプトをClaudeで試してみよう！'
+              : needQuiz ? '❓ クイズに答えてから進もう！'
+              : isLast   ? '🏆 授業を完了する！'
+              : '次のステップへ ➡️';
+
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  const color  = isLast ? 'var(--coral)' : 'var(--mint)';
+
+  if (isCompleted && !isLast) {
+    return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  }
+
+  return `<button class="btn-next" style="${isLast ? 'background:' + color : ''}"
+    id="btn-next-${idx}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `
+    <div class="complete-card">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">第2回クリア！</div>
+      <div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>プロンプトの工夫ができるようになったね。</div>
+      <div class="stars">
+        <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">
+        「くわしく・役割・理由」の3つのコツを覚えておこう！<br>
+        次回は「役割を与えてみよう」を学ぶよ。
+      </div>
+      <a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        🏠 トップにもどる
+      </a>
+    </div>
+  `;
+}
+
+// ===== ACTIONS =====
+function nextStep(idx) {
+  const isNew = !stepState.completedSteps.includes(idx);
+  if (isNew) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState();
+  renderApp();
+  showToast('🎉 第2回完了！すごい！');
+}
+
+function answerQuiz(stepIdx, optIdx) {
+  stepState.quizAnswered[stepIdx] = optIdx;
+  saveStepState();
+  renderStep(stepIdx);
+}
+
+function selectTopic(base, label) {
+  stepState.selectedTopic = { base, label };
+  stepState.triedCompare = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function sendAllPrompts() {
+  if (!stepState.selectedTopic) return;
+  // Open claude.ai - student will manually try each prompt
+  window.open('https://claude.ai/new', '_blank');
+  stepState.triedCompare = true;
+  saveStepState();
+
+  // Copy all 3 prompts info to clipboard as reference
+  const t = stepState.selectedTopic.base;
+  const prompts = [
+    '①ふつう：' + t + 'について教えて',
+    '②くわしく：' + t + 'について小学生にわかるように教えて。面白いポイントを3つ挙げてね。',
+    '③役割＋条件：あなたは' + t + 'の専門家です。小学生に' + t + 'の魅力を、「なぜ面白いか」という理由とともに3つ教えてください。'
+  ].join('\n\n');
+  navigator.clipboard.writeText(prompts).catch(() => {});
+
+  showToast('🚀 Claudeが開いたよ！3つのプロンプトを順番に試してみよう！');
+  renderStep(stepState.currentStep);
+}
+
+function openClaude() {
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeを開いたよ！');
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== BOOT =====
+init();
+</script>
+</body>
+</html>
