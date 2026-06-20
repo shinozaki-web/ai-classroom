@@ -235,16 +235,17 @@ function openMypage() {
   const overlay = document.getElementById('mypage-overlay');
   const grid = document.getElementById('mp-badge-grid');
   const bar = document.getElementById('mp-bar');
-  const pct = Math.round((state.completedSteps.length / LESSONS.length) * 100);
+  const total = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
+  const pct = Math.round((state.completedSteps.length / total) * 100);
 
   document.getElementById('mp-name').textContent = (state.name || 'あなた') + 'さん';
-  document.getElementById('mp-progress-label').textContent = `授業の進み具合：${state.completedSteps.length} / ${LESSONS.length} ステップ完了`;
+  document.getElementById('mp-progress-label').textContent = `授業の進み具合：${state.completedSteps.length} / ${total} ステップ完了`;
   bar.style.width = pct + '%';
 
   grid.innerHTML = BADGES.map((badge, i) => {
     const earned = i < 4
       ? state.completedSteps.includes(i)
-      : state.completedSteps.length === LESSONS.length;
+      : state.completedSteps.length >= total;
     const isNew = earned && !(state.seenBadges || []).includes(badge.id);
     return `
       <div class="badge-item">
@@ -267,7 +268,8 @@ function openMypage() {
 function closeMypage() {
   document.getElementById('mypage-overlay').classList.remove('open');
   // Mark all earned badges as seen
-  const earned = BADGES.filter((b, i) => i < 4 ? state.completedSteps.includes(i) : state.completedSteps.length === LESSONS.length);
+  const _total = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
+  const earned = BADGES.filter((b, i) => i < 4 ? state.completedSteps.includes(i) : state.completedSteps.length >= _total);
   state.seenBadges = earned.map(b => b.id);
   saveState();
 }
@@ -285,7 +287,8 @@ function closeBadgePopup() {
 }
 
 function awardBadgePopup(stepIdx) {
-  const badgeIdx = stepIdx === LESSONS.length - 1 ? 4 : stepIdx;
+  const _t = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
+  const badgeIdx = stepIdx === _t - 1 ? 4 : stepIdx;
   // Only show if not yet seen
   if ((state.seenBadges || []).includes(BADGES[badgeIdx].id)) return;
   const badge = BADGES[badgeIdx];
