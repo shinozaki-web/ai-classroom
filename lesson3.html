@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第3回：役割を与えてみよう | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ===== 役割チップ ===== */
+  .role-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .role-chip {
+    background: var(--bg);
+    border: 1.5px solid #E0E4F0;
+    color: var(--ink-mid);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .role-chip:hover,
+  .role-chip.active {
+    background: var(--purple);
+    color: white;
+    border-color: var(--purple);
+  }
+
+  /* ===== 比較カード ===== */
+  .compare-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .compare-card {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .compare-header {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-prompt {
+    background: var(--white);
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--ink-mid);
+    border-bottom: 1px solid #F0F2FA;
+    line-height: 1.6;
+  }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result {
+    background: #FAFBFF;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    min-height: 56px;
+    white-space: pre-wrap;
+  }
+
+  /* バージョンラベル */
+  .v-basic  { background: #F1EFE8; color: #5F5E5A; }
+  .v-good   { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great  { background: var(--mint-light); color: #1a7a4a; }
+
+  /* ===== 試す入力エリア ===== */
+  .try-area {
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .try-area-header {
+    background: var(--purple);
+    color: white;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .try-topic-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F0F2FA;
+  }
+  .try-topic-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .topic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .topic-chip {
+    background: var(--bg);
+    border: 1.5px solid #E0E4F0;
+    color: var(--ink-mid);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .topic-chip:hover,
+  .topic-chip.active {
+    background: var(--purple);
+    color: white;
+    border-color: var(--purple);
+  }
+  .try-versions {
+    display: flex;
+    flex-direction: column;
+  }
+  .try-version-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F0F2FA;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .try-version-row:last-child { border-bottom: none; }
+  .version-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .try-prompt-text {
+    flex: 1;
+    font-size: 14px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    padding: 6px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid #E0E4F0;
+    min-height: 40px;
+  }
+  .btn-try-all {
+    width: calc(100% - 32px);
+    margin: 12px 16px;
+    padding: 14px;
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-try-all:hover { background: #6258c8; }
+  .btn-try-all:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ===== 発見ボックス ===== */
+  .discovery-box {
+    background: var(--amber-light);
+    border: 2px solid var(--amber);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .discovery-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #b87d00;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .discovery-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .discovery-item {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+  }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  /* ===== チャレンジ（中学生向け）===== */
+  .challenge-box {
+    border: 2px dashed #7C6FE0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: var(--purple-light);
+    margin-bottom: 16px;
+  }
+  .challenge-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .challenge-text {
+    font-size: 13px;
+    color: var(--ink-mid);
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <!-- PROGRESS -->
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>📚 第3回のステップ</span>
+        <span id="progress-text">0 / 5 完了</span>
+      </div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label">
+        <span>気づく</span>
+        <span>比べる</span>
+        <span>試す</span>
+        <span>まとめ</span>
+        <span>チャレンジ</span>
+      </div>
+    </div>
+
+    <!-- LESSON CONTENT -->
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<!-- MYPAGE / BADGE POPUP -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+// ===== LESSON DATA =====
+const LESSON_ID = 3;
+
+const STEPS = [
+  // STEP 0: 気づく
+  {
+    icon: '🎭',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 1',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'AIに「役割」を与えると変わる！',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">前回、プロンプトで「あなたは〇〇です」と伝えると答えが変わることを学んだよね。<br>
+      今日はこの<strong>「役割を与える」テクニック</strong>をもっとくわしく体験しよう！</p>
+      <p class="lesson-text">たとえば同じ「ピザを教えて」という質問でも、<br>
+      「あなたはイタリア人シェフです」と伝えるか、「あなたは栄養士です」と伝えるかで、<strong>全く違う答えが返ってくる</strong>よ。</p>
+      <div class="info-box">
+        <b>🎭 今日学ぶこと：</b><br>
+        AIに「あなたは〇〇です」と<b>ペルソナ（役割）</b>を与えると、<br>
+        その立場から考えた、より深くて面白い答えが返ってくるようになる！
+      </div>
+    `,
+    quiz: {
+      question: 'AIに「あなたは小学校の先生です」と伝えるとどうなる？',
+      options: [
+        'AIがほんとうに先生になる',
+        '先生が使うような言葉や説明のしかたで答えてくれる',
+        'AIが答えを教えてくれなくなる',
+        '難しい言葉をたくさん使うようになる'
+      ],
+      answer: 1,
+      ok: '🎉 正解！AIはその役割の視点・言葉・知識から答えてくれるようになるんだ。本当に先生になるわけじゃないけど、先生らしい答え方をしてくれるよ！',
+      ng: '🤔 惜しい！AIは「先生になりきって」答えてくれるよ。難しい言葉よりもむしろわかりやすい言葉で説明してくれることが多いんだ。役割が変われば答え方が変わる！'
+    }
+  },
+
+  // STEP 1: 比べる
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '同じ質問、役割を変えると？',
+    type: 'compare',
+    content: `
+      <p class="lesson-text">「北九州のおすすめ食べ物を3つ教えて」という同じ質問を、<br>
+      役割を変えながらClaudeに送ってみたよ。どれだけ変わるか見てみよう！</p>
+    `,
+    examples: [
+      {
+        label: '役割なし　そのまま聞く',
+        labelClass: 'v-basic',
+        prompt: '北九州のおすすめ食べ物を3つ教えて',
+        response: '北九州のおすすめ食べ物を3つ紹介します。\n①焼きうどん：小倉発祥の名物料理。甘辛いソースと麺の組み合わせが特徴です。\n②ぬかみそ炊き：青魚をぬかみそで炊いた郷土料理。独特の深い味わいがあります。\n③焼きカレー：門司港で生まれたグラタン皿で焼いて仕上げるカレー料理です。'
+      },
+      {
+        label: '役割①　「北九州に住む子どもです」',
+        labelClass: 'v-good',
+        prompt: 'あなたは北九州に住む小学5年生の子どもです。北九州のおすすめ食べ物を3つ教えて。',
+        response: '北九州の食べ物、いっぱいあるよ！わたしのおすすめは：\n\n①焼きうどん🍜\nソースがしみしみでめっちゃおいしい！小倉駅の近くにおいしいお店があるよ。給食でも出るんだ。\n\n②ぬかみそ炊き🐟\n最初は「なにこれ？」ってなるかもだけど、食べたらクセになるよ！おばあちゃんがよく作ってくれる。\n\n③焼きカレー（門司港！）🍛\n門司港レトロに遊びに行ったときに食べたらめちゃくちゃおいしかった！チーズがとろとろ。'
+      },
+      {
+        label: '役割②　「食文化の研究家です」',
+        labelClass: 'v-great',
+        prompt: 'あなたは日本の食文化を研究している専門家です。観光客に北九州の食の魅力と歴史を伝えてください。おすすめを3つ、その背景とともに紹介してください。',
+        response: '北九州の食文化は、産業・港・歴史が交差した非常に独自性の高いものです。\n\n🍜 ①焼きうどん（発祥の地：小倉）\n戦後の物資不足の時代、傷みやすいそばの代わりに乾麺うどんを鉄板で焼いたのが起源。苦境から生まれたこの料理は今や全国区となり、発祥地・小倉では今も「正しい焼きうどん」をめぐる議論が続いています。\n\n🐟 ②ぬかみそ炊き（北九州の台所文化の象徴）\n各家庭に受け継がれた「ぬか床」に青魚を漬けて炊く北九州独自の保存食文化。製鉄所で働く労働者たちに江戸時代から愛されてきた庶民の味です。\n\n🍛 ③焼きカレー（門司港発祥）\n石炭貿易で栄えた門司港の洋食文化から生まれた一品。カレーをグラタン皿で焼き上げたもので、今では門司港レトロを代表するご当地グルメとなっています。'
+      }
+    ]
+  },
+
+  // STEP 2: 試す
+  {
+    icon: '🎯',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'じぶんで役割を選んで試そう！',
+    type: 'try',
+    content: `
+      <p class="lesson-text">今度はじぶんで試してみよう！<br>
+      「テーマ」と「Claudeに演じてもらう役割」を選ぶと、3種類のプロンプトが作られるよ。</p>
+    `,
+    topics: [
+      { label: '🍕 ピザ',   base: 'ピザ' },
+      { label: '🐬 イルカ', base: 'イルカ' },
+      { label: '⚽ サッカー', base: 'サッカー' },
+      { label: '🌙 宇宙',   base: '宇宙' },
+      { label: '🏯 北九州', base: '北九州' },
+    ],
+    roles: [
+      { label: '👨‍🍳 料理研究家',    base: '料理研究家' },
+      { label: '🏫 小学校の先生', base: '小学校の先生' },
+      { label: '🔭 宇宙飛行士',   base: '宇宙飛行士' },
+      { label: '🕵️ 探偵',         base: '探偵' },
+      { label: '🏴‍☠️ 海賊の船長', base: '海賊の船長' },
+    ]
+  },
+
+  // STEP 3: まとめ
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：役割の3つのコツ',
+    type: 'summary',
+    content: `
+      <p class="lesson-text">役割を与えると答えが大きく変わることを体験したね。<br>まとめてみよう！</p>
+    `,
+    discoveries: [
+      { text: '<b>役割の専門性：</b>専門家を指定するほど詳しい情報が得られる。「料理研究家」>「料理が好きな人」' },
+      { text: '<b>役割＋対象：</b>「誰に向けて話すか」も加えると精度がさらに上がる。「小学生に教える先生」など' },
+      { text: '<b>役割＋追加条件：</b>役割を与えた上でさらに「3つ」「理由も含めて」などの条件を足すと最強！' },
+    ],
+    quiz: {
+      question: 'AIにより深い答えを出してもらうには？',
+      options: [
+        '「あなたは〇〇です」と役割を伝えて、さらに条件も加える',
+        'なるべく短いプロンプトを送る',
+        '英語で聞く',
+        '同じ質問を何回も送る'
+      ],
+      answer: 0,
+      ok: '🌟 正解！役割＋条件の組み合わせが最強だよ。「あなたは〇〇の専門家です。△△向けに、□□という条件で教えてください」という型を覚えておこう！',
+      ng: '🤔 惜しい！正解は「役割＋条件」の組み合わせだよ。「あなたは専門家です。小学生向けに3つ教えて」のように役割と追加の条件を組み合わせるのが一番効果的なんだ。'
+    }
+  },
+
+  // STEP 4: チャレンジ
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：役割をもっと使いこなそう',
+    type: 'challenge',
+    content: `
+      <p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ。<br>
+      役割をもっと深く使いこなしてみよう！</p>
+    `,
+    challenges: [
+      {
+        level: '★',
+        title: '「矛盾する役割」で比べてみよう',
+        desc: '同じ質問を「お医者さん」と「お菓子職人」に聞いたら、どんな違いが出る？自分でテーマを決めて2つの役割で試してみよう。',
+        hint: '例：「砂糖について教えて」を医者に聞く vs お菓子職人に聞く。どんな視点の違いが出るかな？'
+      },
+      {
+        level: '★★',
+        title: '「北九州の課題」を違う立場から考えよう',
+        desc: '北九州の人口減少について「市長」「観光客」「地元の高校生」の3つの役割で別々に聞いてみよう。それぞれどんな意見が出る？',
+        hint: 'ヒント：同じ問題でも役割が違うと注目する点が変わる。その違いをメモして比べてみよう。'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）「理想のAI先生」を設計しよう',
+        desc: '「理想のAIの先生」のペルソナを自分で設計して、Claudeに渡してみよう。どんな役割・話し方・知識レベル・禁止事項を設定するといい？',
+        hint: 'キーワード：システムプロンプト、ペルソナ設計。AIアシスタントを作るときの「設計図」に挑戦！'
+      }
+    ]
+  }
+];
+
+// ===== STATE =====
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  triedRole: false,
+  selectedTopic: null,
+  selectedRole: null,
+};
+
+// ===== INIT =====
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson3-state') || '{}');
+  stepState = { ...stepState, ...saved };
+
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson3-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) {
+    state.lessonCompleted[LESSON_ID] = true;
+  }
+  saveState();
+}
+
+// ===== RENDER =====
+function renderApp() {
+  renderProgress();
+  renderStep(stepState.currentStep);
+}
+
+function renderProgress() {
+  const total = STEPS.length;
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + total + ' 完了';
+  const pills = document.getElementById('progress-steps');
+  pills.innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const maxReached = Math.max(...stepState.completedSteps, 0);
+  if (i <= maxReached + 1) {
+    stepState.currentStep = i;
+    renderApp();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `
+    <div class="lesson-card">
+      <div class="lesson-header">
+        <div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div>
+        <div class="lesson-meta">
+          <span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span>
+          <div class="lesson-title">${step.title}</div>
+        </div>
+      </div>
+      <div class="lesson-body">
+        ${step.content}
+  `;
+
+  if (step.type === 'intro')     html += renderIntro(step, idx);
+  else if (step.type === 'compare')  html += renderCompare(step, idx);
+  else if (step.type === 'try')      html += renderTry(step, idx);
+  else if (step.type === 'summary')  html += renderSummaryStep(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+
+  if (stepState.completedSteps.length === STEPS.length) {
+    html += renderCompleteCard();
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== STEP RENDERERS =====
+function renderIntro(step, idx) {
+  return renderQuiz(step.quiz, idx);
+}
+
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach(ex => {
+    html += `
+      <div class="compare-card">
+        <div class="compare-header ${ex.labelClass}">${ex.label}</div>
+        <div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div>
+        <div class="compare-result">${escHtml(ex.response)}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  html += `
+    <div class="discovery-box">
+      <div class="discovery-title">🔍 気づいたこと</div>
+      <div class="discovery-items">
+        <div class="discovery-item">役割なしは正確だけどシンプル。情報は合ってるけど「だれかの視点」がない。</div>
+        <div class="discovery-item">「子どもです」という役割にしたら、友達に話すような言葉になって、具体的な体験談が出てきた！</div>
+        <div class="discovery-item">「食文化の研究家」にしたら、歴史的な背景まで詳しく教えてくれた！役割の専門性が高いほど、情報の深さが変わる。</div>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+function renderTry(step, idx) {
+  const topic = stepState.selectedTopic;
+  const role  = stepState.selectedRole;
+
+  let html = `
+    <div class="try-area">
+      <div class="try-area-header">🎯 テーマと役割を選ぼう</div>
+      <div class="try-topic-row">
+        <div class="try-topic-label">① テーマを選んでね</div>
+        <div class="topic-chips">
+          ${step.topics.map(t => `
+            <span class="topic-chip ${topic && topic.base === t.base ? 'active' : ''}"
+              onclick="selectTopic('${escHtml(t.base)}','${escHtml(t.label)}')">${t.label}</span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="try-topic-row">
+        <div class="try-topic-label">② Claudeに演じてもらう役割を選んでね</div>
+        <div class="role-chips">
+          ${step.roles.map(r => `
+            <span class="role-chip ${role && role.base === r.base ? 'active' : ''}"
+              onclick="selectRole('${escHtml(r.base)}','${escHtml(r.label)}')">${r.label}</span>
+          `).join('')}
+        </div>
+      </div>
+  `;
+
+  if (topic && role) {
+    const p1 = topic.base + 'について教えて';
+    const p2 = 'あなたは' + role.base + 'です。' + topic.base + 'について教えてください。';
+    const p3 = 'あなたは' + role.base + 'の専門家です。小学生に' + topic.base + 'の魅力を、「なぜ面白いか」という理由とともに3つ教えてください。';
+
+    html += `
+      <div class="try-versions">
+        <div class="try-version-row">
+          <span class="version-tag v-basic">①役割なし</span>
+          <div class="try-prompt-text">${escHtml(p1)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-good">②役割あり</span>
+          <div class="try-prompt-text">${escHtml(p2)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-great">③役割＋条件</span>
+          <div class="try-prompt-text">${escHtml(p3)}</div>
+        </div>
+      </div>
+      <button class="btn-try-all" onclick="sendAllPrompts()">
+        🚀 3つ全部Claudeで試す
+      </button>
+    `;
+  }
+
+  html += '</div>';
+
+  if (stepState.triedRole) {
+    html += `
+      <div class="launcher-done" style="text-align:center;margin-bottom:12px">
+        ✅ Claudeで試したね！役割によって答えがどう変わったか気づいた？
+      </div>
+    `;
+  }
+
+  return html;
+}
+
+function renderSummaryStep(step, idx) {
+  let html = `
+    <div class="discovery-box">
+      <div class="discovery-title">💡 役割を与える3つのコツ</div>
+      <div class="discovery-items">
+        ${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step, idx) {
+  let html = `
+    <div class="challenge-box">
+      <div class="challenge-title">⭐ チャレンジミッション</div>
+      <div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div>
+    </div>
+  `;
+
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px">
+          <span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span>
+        </div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div>
+      <div class="quiz-options">
+  `;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) {
+      if (oi === quiz.answer) cls += ' correct';
+      else if (oi === answered) cls += ' wrong';
+    }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) {
+    const ok = answered === quiz.answer;
+    html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx];
+  const isLast = idx === STEPS.length - 1;
+  const isCompleted = stepState.completedSteps.includes(idx);
+
+  const needQuiz  = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needTopic = step.type === 'try' && !stepState.selectedTopic;
+  const needRole  = step.type === 'try' && !stepState.selectedRole;
+  const needTry   = step.type === 'try' && !stepState.triedRole;
+  const blocked = needQuiz || needTopic || needRole || needTry;
+
+  const hint = needTopic ? '👆 まずテーマを選んでね！'
+              : needRole  ? '👆 次に役割を選んでね！'
+              : needTry   ? '🚀 まず3つのプロンプトをClaudeで試してみよう！'
+              : needQuiz  ? '❓ クイズに答えてから進もう！'
+              : isLast    ? '🏆 授業を完了する！'
+              : '次のステップへ ➡️';
+
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  const color  = isLast ? 'var(--coral)' : 'var(--mint)';
+
+  if (isCompleted && !isLast) {
+    return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  }
+
+  return `<button class="btn-next" style="${isLast ? 'background:' + color : ''}"
+    id="btn-next-${idx}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `
+    <div class="complete-card">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">第3回クリア！</div>
+      <div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>役割を与える技が身についたね。</div>
+      <div class="stars">
+        <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">
+        「あなたは〇〇です」の一言で、AIの答えが大きく変わる！<br>
+        次回は「AIに情報を教えてあげよう」を学ぶよ。
+      </div>
+      <a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        🏠 トップにもどる
+      </a>
+    </div>
+  `;
+}
+
+// ===== ACTIONS =====
+function nextStep(idx) {
+  const isNew = !stepState.completedSteps.includes(idx);
+  if (isNew) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState();
+  renderApp();
+  showToast('🎉 第3回完了！すごい！');
+}
+
+function answerQuiz(stepIdx, optIdx) {
+  stepState.quizAnswered[stepIdx] = optIdx;
+  saveStepState();
+  renderStep(stepIdx);
+}
+
+function selectTopic(base, label) {
+  stepState.selectedTopic = { base, label };
+  stepState.triedRole = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function selectRole(base, label) {
+  stepState.selectedRole = { base, label };
+  stepState.triedRole = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function sendAllPrompts() {
+  if (!stepState.selectedTopic || !stepState.selectedRole) return;
+  window.open('https://claude.ai/new', '_blank');
+  stepState.triedRole = true;
+  saveStepState();
+
+  const t = stepState.selectedTopic.base;
+  const r = stepState.selectedRole.base;
+  const prompts = [
+    '①役割なし：' + t + 'について教えて',
+    '②役割あり：あなたは' + r + 'です。' + t + 'について教えてください。',
+    '③役割＋条件：あなたは' + r + 'の専門家です。小学生に' + t + 'の魅力を、「なぜ面白いか」という理由とともに3つ教えてください。'
+  ].join('\n\n');
+  navigator.clipboard.writeText(prompts).catch(() => {});
+
+  showToast('🚀 Claudeが開いたよ！3つのプロンプトを順番に試してみよう！');
+  renderStep(stepState.currentStep);
+}
+
+function openClaude() {
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeを開いたよ！');
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== BOOT =====
+init();
+</script>
+</body>
+</html>
