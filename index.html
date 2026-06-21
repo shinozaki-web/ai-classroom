@@ -188,6 +188,9 @@ loadState();
 if (state.name) {
   document.getElementById('name-input').value = state.name;
   document.getElementById('header-name').textContent = state.name + 'さん';
+  if (state.classCode) {
+    document.getElementById('class-note').textContent = 'クラスコード：' + state.classCode;
+  }
 }
 renderAll();
 
@@ -201,6 +204,7 @@ function setName() {
   }
   saveState();
   document.getElementById('header-name').textContent = val + 'さん';
+  document.getElementById('class-note').textContent = 'クラスコード：' + state.classCode;
   showToast('✅ ' + val + 'さんでセットしたよ！');
   renderAll();
 }

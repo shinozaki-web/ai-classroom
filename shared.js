@@ -204,6 +204,7 @@ function saveState() {
     teacherData[state.classCode][state.name] = {
       name: state.name,
       completedSteps: state.completedSteps,
+      lessonCompleted: state.lessonCompleted || {},
       chatCounts: state.chatCounts,
       lastSeen: Date.now()
     };
@@ -307,6 +308,14 @@ function awardBadgePopup() {
   document.getElementById('bp-sub').textContent = '「' + badge.stepLabel + '」達成！\n' + badge.desc;
   document.getElementById('bp-name').textContent = badge.name + 'バッジをゲット！🎊';
   document.getElementById('badge-popup-overlay').classList.add('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ===== BOOT =====

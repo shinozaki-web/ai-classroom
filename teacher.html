@@ -344,7 +344,7 @@
       <div class="stat-card"><div class="stat-num" id="s-students">0</div><div class="stat-label">生徒数（合計）</div></div>
       <div class="stat-card"><div class="stat-num" id="s-classes">0</div><div class="stat-label">クラス数</div></div>
       <div class="stat-card"><div class="stat-num" id="s-completed">0</div><div class="stat-label">授業完了者</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均進捗ステップ</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均完了授業数</div></div>
     </div>
 
     <!-- CLASS MANAGEMENT -->
@@ -408,9 +408,9 @@ function renderStats(data) {
   Object.values(data).forEach(cls => {
     Object.values(cls).forEach(s => {
       total++;
-      const steps = (s.completedSteps||[]).length;
-      if (steps >= 5) completed++;
-      stepSum += steps;
+      const lessonDone = Object.values(s.lessonCompleted||{}).filter(Boolean).length;
+      if (lessonDone >= 4) completed++;
+      stepSum += lessonDone;
     });
   });
   document.getElementById('s-students').textContent = total;
@@ -454,7 +454,7 @@ function renderStudentTable(students) {
       <thead>
         <tr>
           <th>なまえ</th>
-          <th>進捗</th>
+          <th>授業完了（第1〜4回）</th>
           <th>会話数</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
@@ -462,15 +462,16 @@ function renderStudentTable(students) {
       </thead>
       <tbody>
         ${students.map(s => {
-          const steps = (s.completedSteps||[]).length;
+          const lc = s.lessonCompleted || {};
+          const lessonDone = Object.values(lc).filter(Boolean).length;
           const chats = (s.chatCounts||[]).reduce((a,b)=>a+b,0);
-          const status = steps >= 5 ? 'done' : steps > 0 ? 'mid' : 'start';
-          const statusLabel = steps >= 5 ? '完了 🎉' : steps > 0 ? '進行中' : '未開始';
+          const status = lessonDone >= 4 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
+          const statusLabel = lessonDone >= 4 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
           const last = s.lastSeen ? timeAgo(s.lastSeen) : '-';
           return `
             <tr>
               <td class="student-name">${esc(s.name||'-')}</td>
-              <td><div class="step-bubbles">${[0,1,2,3,4].map(i=>`<div class="step-bubble ${(s.completedSteps||[]).includes(i)?'done':''}">${i+1}</div>`).join('')}</div></td>
+              <td><div class="step-bubbles">${[1,2,3,4].map(i=>`<div class="step-bubble ${!!lc[i]?'done':''}">${i}</div>`).join('')}</div></td>
               <td>${chats}</td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${last}</td>
@@ -500,21 +501,22 @@ function renderAllStudents(data) {
         <tr>
           <th>なまえ</th>
           <th>クラス</th>
-          <th>進捗</th>
+          <th>授業完了（第1〜4回）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
       </thead>
       <tbody>
         ${allStudents.map(s => {
-          const steps = (s.completedSteps||[]).length;
-          const status = steps >= 5 ? 'done' : steps > 0 ? 'mid' : 'start';
-          const statusLabel = steps >= 5 ? '完了 🎉' : steps > 0 ? '進行中' : '未開始';
+          const lc = s.lessonCompleted || {};
+          const lessonDone = Object.values(lc).filter(Boolean).length;
+          const status = lessonDone >= 4 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
+          const statusLabel = lessonDone >= 4 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
           return `
             <tr>
               <td class="student-name">${esc(s.name||'-')}</td>
               <td><span class="btn-copy" style="cursor:default">${esc(s.classCode||'-')}</span></td>
-              <td><div class="step-bubbles">${[0,1,2,3,4].map(i=>`<div class="step-bubble ${(s.completedSteps||[]).includes(i)?'done':''}">${i+1}</div>`).join('')}</div></td>
+              <td><div class="step-bubbles">${[1,2,3,4].map(i=>`<div class="step-bubble ${!!lc[i]?'done':''}">${i}</div>`).join('')}</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.lastSeen ? timeAgo(s.lastSeen) : '-'}</td>
             </tr>
