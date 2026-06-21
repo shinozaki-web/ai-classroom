@@ -691,6 +691,7 @@ function completeLesson() {
   saveStepState();
   renderApp();
   showToast('🎉 第4回完了！Block① 全部クリア！');
+  setTimeout(() => awardBadgePopup(), 800);
 }
 
 function answerQuiz(stepIdx, optIdx) {

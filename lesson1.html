@@ -428,7 +428,6 @@ function nextStep(idx) {
   renderApp();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
-  if (isNew) setTimeout(() => awardBadgePopup(idx), 600);
 }
 
 function complete() {
@@ -440,7 +439,7 @@ function complete() {
   saveState();
   renderApp();
   showToast('🎉 第1回完了！すごい！');
-  if (isNew) setTimeout(() => awardBadgePopup(idx), 800);
+  setTimeout(() => awardBadgePopup(), 800);
 }
 
 function answerQuiz(lessonIdx, optionIdx) {

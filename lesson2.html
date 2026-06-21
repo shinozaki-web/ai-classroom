@@ -785,6 +785,7 @@ function completeLesson() {
   saveStepState();
   renderApp();
   showToast('🎉 第2回完了！すごい！');
+  setTimeout(() => awardBadgePopup(), 800);
 }
 
 function answerQuiz(stepIdx, optIdx) {

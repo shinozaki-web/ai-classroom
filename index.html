@@ -77,6 +77,15 @@
   .badge-mini-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   .badge-mini-circle.locked { filter: grayscale(1) opacity(0.3); }
   .badge-mini-name { font-size: 10px; color: var(--ink-soft); font-weight: 700; text-align: center; max-width: 50px; }
+
+  /* ===== スタンプ ===== */
+  .stamp-card { background: var(--white); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-card); margin-bottom: 20px; }
+  .stamp-card-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .stamp-count { font-size: 12px; color: var(--ink-soft); font-weight: 400; }
+  .stamp-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .stamp { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; }
+  .stamp.earned { }
+  .stamp.empty { background: #EBEBEB; border: 2px dashed #C8C8C8; color: #bbb; font-size: 10px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -110,6 +119,11 @@
     <div class="overall-bar-bg">
       <div class="overall-bar-fill" id="overall-bar" style="width:0%"></div>
     </div>
+  </div>
+
+  <div class="stamp-card">
+    <div class="stamp-card-title">🎫 出席スタンプ <span class="stamp-count" id="stamp-count"></span></div>
+    <div class="stamp-grid" id="stamp-grid"></div>
   </div>
 
   <div class="badge-summary">
@@ -193,6 +207,7 @@ function setName() {
 
 function renderAll() {
   renderProgress();
+  renderStamps();
   renderBadgeMini();
   renderLessons();
 }
@@ -203,11 +218,31 @@ function renderProgress() {
   document.getElementById('overall-bar').style.width = Math.round(done / ALL_LESSONS.length * 100) + '%';
 }
 
+function renderStamps() {
+  const lc = state.lessonCompleted || {};
+  const earnedCount = Object.values(lc).filter(Boolean).length;
+  document.getElementById('stamp-count').textContent = earnedCount + ' / 14';
+  document.getElementById('stamp-grid').innerHTML = ALL_LESSONS.map(l => {
+    const done = !!lc[l.id];
+    return done
+      ? `<div class="stamp earned" style="background:${l.color}" title="第${l.id}回">${l.icon}</div>`
+      : `<div class="stamp empty" title="第${l.id}回">${l.id}</div>`;
+  }).join('');
+}
+
 function renderBadgeMini() {
+  const lc = state.lessonCompleted || {};
+  const d = id => !!lc[id];
+  const cnt = Object.values(lc).filter(Boolean).length;
+  const checks = [
+    d(1),
+    d(1) && d(2) && d(3) && d(4),
+    d(5) && d(6) && d(7) && d(8) && d(9) && d(10),
+    d(11) && d(12) && d(13) && d(14),
+    cnt >= ALL_LESSONS.length
+  ];
   document.getElementById('badge-mini-row').innerHTML = BADGES.map((b, i) => {
-    const earned = i < 4
-      ? !!(state.lessonCompleted || {})[i + 1]
-      : Object.values(state.lessonCompleted || {}).filter(Boolean).length >= ALL_LESSONS.length;
+    const earned = checks[i];
     return `<div class="badge-mini">
       <div class="badge-mini-circle ${earned ? '' : 'locked'}"
            style="${earned ? 'background:' + b.bg + ';border:2px solid ' + b.border : ''}">

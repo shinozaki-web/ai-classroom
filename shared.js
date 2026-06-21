@@ -5,7 +5,7 @@ const BADGES = [
     name: 'ていたん',
     region: '北九州市',
     desc: '環境キャラクター。ひまわりのバンダナがトレードマーク！',
-    stepLabel: 'STEP 1クリア',
+    stepLabel: '第1回クリア',
     bg: '#FFF8EB',
     border: '#F5A623',
     svgContent: `
@@ -38,7 +38,7 @@ const BADGES = [
     name: 'じーも',
     region: '門司区',
     desc: '門司港を元気にする門司区のキャラクター！',
-    stepLabel: 'STEP 2クリア',
+    stepLabel: 'Block①クリア（1〜4回）',
     bg: '#EBF4FF',
     border: '#4A90E2',
     svgContent: `
@@ -69,7 +69,7 @@ const BADGES = [
     name: 'ヤハタン',
     region: '八幡区',
     desc: '八幡ぎょうざPR隊長！熱い溶鉱炉から生まれたキャラ！',
-    stepLabel: 'STEP 3クリア',
+    stepLabel: 'Block②クリア（5〜10回）',
     bg: '#FFF0EE',
     border: '#F26B5B',
     svgContent: `
@@ -105,7 +105,7 @@ const BADGES = [
     name: 'すなQ',
     region: '北九州市',
     desc: '北九州のゆるキャラ！海や砂浜が大好きなキャラクター！',
-    stepLabel: 'STEP 4クリア',
+    stepLabel: 'Block③クリア（11〜14回）',
     bg: '#E8FBF2',
     border: '#34C88A',
     svgContent: `
@@ -139,7 +139,7 @@ const BADGES = [
     name: 'せきまる',
     region: '下関市',
     desc: 'クジラとフグがモチーフ！奇兵隊の笠がトレードマーク！',
-    stepLabel: '全ステップクリア',
+    stepLabel: '全14回クリア！',
     bg: '#F0EEFF',
     border: '#7C6FE0',
     svgContent: `
@@ -226,26 +226,38 @@ function startApp() {
 
 
 // ===== BADGE FUNCTIONS =====
-// ===== BADGE FUNCTIONS =====
 function getBadgeSVG(badge, size=62) {
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">${badge.svgContent}</svg>`;
 }
 
+// Plan B: badge earned conditions
+// 0=ていたん:第1回完了 / 1=じーも:Block①(1-4) / 2=ヤハタン:Block②(5-10) / 3=すなQ:Block③(11-14) / 4=せきまる:全14回
+function _badgeChecks() {
+  const lc = state.lessonCompleted || {};
+  const d = id => !!lc[id];
+  const cnt = Object.values(lc).filter(Boolean).length;
+  return [
+    d(1),
+    d(1) && d(2) && d(3) && d(4),
+    d(5) && d(6) && d(7) && d(8) && d(9) && d(10),
+    d(11) && d(12) && d(13) && d(14),
+    cnt >= 14
+  ];
+}
+
 function openMypage() {
-  const overlay = document.getElementById('mypage-overlay');
-  const grid = document.getElementById('mp-badge-grid');
-  const bar = document.getElementById('mp-bar');
-  const total = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
-  const pct = Math.round((state.completedSteps.length / total) * 100);
+  const lc = state.lessonCompleted || {};
+  const lessonDone = Object.values(lc).filter(Boolean).length;
+  const total = 14;
+  const pct = Math.round(lessonDone / total * 100);
 
   document.getElementById('mp-name').textContent = (state.name || 'あなた') + 'さん';
-  document.getElementById('mp-progress-label').textContent = `授業の進み具合：${state.completedSteps.length} / ${total} ステップ完了`;
-  bar.style.width = pct + '%';
+  document.getElementById('mp-progress-label').textContent = `授業の進み具合：${lessonDone} / ${total} 回完了`;
+  document.getElementById('mp-bar').style.width = pct + '%';
 
-  grid.innerHTML = BADGES.map((badge, i) => {
-    const earned = i < 4
-      ? state.completedSteps.includes(i)
-      : state.completedSteps.length >= total;
+  const checks = _badgeChecks();
+  document.getElementById('mp-badge-grid').innerHTML = BADGES.map((badge, i) => {
+    const earned = checks[i];
     const isNew = earned && !(state.seenBadges || []).includes(badge.id);
     return `
       <div class="badge-item">
@@ -262,15 +274,13 @@ function openMypage() {
     `;
   }).join('');
 
-  overlay.classList.add('open');
+  document.getElementById('mypage-overlay').classList.add('open');
 }
 
 function closeMypage() {
   document.getElementById('mypage-overlay').classList.remove('open');
-  // Mark all earned badges as seen
-  const _total = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
-  const earned = BADGES.filter((b, i) => i < 4 ? state.completedSteps.includes(i) : state.completedSteps.length >= _total);
-  state.seenBadges = earned.map(b => b.id);
+  const checks = _badgeChecks();
+  state.seenBadges = BADGES.filter((_, i) => checks[i]).map(b => b.id);
   saveState();
 }
 
@@ -286,12 +296,13 @@ function closeBadgePopup() {
   document.getElementById('badge-popup-overlay').classList.remove('open');
 }
 
-function awardBadgePopup(stepIdx) {
-  const _t = typeof LESSONS !== 'undefined' ? LESSONS.length : 5;
-  const badgeIdx = stepIdx === _t - 1 ? 4 : stepIdx;
-  // Only show if not yet seen
-  if ((state.seenBadges || []).includes(BADGES[badgeIdx].id)) return;
-  const badge = BADGES[badgeIdx];
+// 最初にまだ未表示の獲得済みバッジをポップアップ表示する
+function awardBadgePopup() {
+  const checks = _badgeChecks();
+  const seen = state.seenBadges || [];
+  const idx = checks.findIndex((earned, i) => earned && !seen.includes(BADGES[i].id));
+  if (idx < 0) return;
+  const badge = BADGES[idx];
   document.getElementById('bp-svg').innerHTML = getBadgeSVG(badge, 100);
   document.getElementById('bp-sub').textContent = '「' + badge.stepLabel + '」達成！\n' + badge.desc;
   document.getElementById('bp-name').textContent = badge.name + 'バッジをゲット！🎊';
