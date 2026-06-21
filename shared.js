@@ -179,6 +179,8 @@ const BADGES = [
 // ===== STATE =====
 let state = {
   name: '',
+  grade: '',
+  ward: '',
   classCode: '',
   currentStep: 0,
   completedSteps: [],
@@ -205,6 +207,8 @@ function saveState() {
     if (!teacherData[state.classCode]) teacherData[state.classCode] = {};
     teacherData[state.classCode][state.name] = {
       name: state.name,
+      grade: state.grade || '',
+      ward: state.ward || '',
       completedSteps: state.completedSteps,
       lessonCompleted: state.lessonCompleted || {},
       chatCounts: state.chatCounts,
