@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第4回：AIに教えてあげよう | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ===== 情報タグ（複数選択）===== */
+  .info-tag-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .info-tag-chip {
+    background: var(--bg);
+    border: 1.5px solid #E0E4F0;
+    color: var(--ink-mid);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .info-tag-chip:hover  { border-color: var(--amber); background: var(--amber-light); }
+  .info-tag-chip.active { background: var(--amber); color: white; border-color: var(--amber); }
+
+  .info-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 99px;
+    margin-top: 6px;
+  }
+  .info-count-badge.ok   { background: var(--mint-light); color: #1a7a4a; }
+  .info-count-badge.need { background: var(--amber-light); color: #b87d00; }
+
+  /* ===== 比較カード ===== */
+  .compare-wrap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .compare-card { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); }
+  .compare-header {
+    padding: 10px 16px; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .compare-prompt {
+    background: var(--white); padding: 12px 16px; font-size: 14px;
+    color: var(--ink-mid); border-bottom: 1px solid #F0F2FA; line-height: 1.6;
+  }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result {
+    background: #FAFBFF; padding: 12px 16px; font-size: 13px;
+    color: var(--ink-mid); line-height: 1.7; min-height: 56px; white-space: pre-wrap;
+  }
+  .v-basic { background: #F1EFE8; color: #5F5E5A; }
+  .v-good  { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great { background: var(--mint-light); color: #1a7a4a; }
+
+  /* ===== 試すエリア ===== */
+  .try-area {
+    background: var(--white); border-radius: 14px;
+    box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px;
+  }
+  .try-area-header {
+    background: var(--amber); color: white; padding: 10px 16px;
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .try-topic-row { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .try-topic-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+  .topic-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .topic-chip {
+    background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid);
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .topic-chip:hover, .topic-chip.active {
+    background: var(--amber); color: white; border-color: var(--amber);
+  }
+  .try-versions { display: flex; flex-direction: column; }
+  .try-version-row {
+    padding: 12px 16px; border-bottom: 1px solid #F0F2FA;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .try-version-row:last-child { border-bottom: none; }
+  .version-tag {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    white-space: nowrap; margin-top: 2px; flex-shrink: 0;
+  }
+  .try-prompt-text {
+    flex: 1; font-size: 14px; color: var(--ink-mid); line-height: 1.6;
+    padding: 6px 12px; background: var(--bg); border-radius: 8px;
+    border: 1px solid #E0E4F0; min-height: 40px;
+  }
+  .btn-try-all {
+    width: calc(100% - 32px); margin: 12px 16px; padding: 14px;
+    background: var(--amber); color: white; border: none; border-radius: 12px;
+    font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 8px; transition: background 0.2s;
+  }
+  .btn-try-all:hover { background: #d48a00; }
+  .btn-try-all:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ===== 発見ボックス ===== */
+  .discovery-box {
+    background: var(--amber-light); border: 2px solid var(--amber);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;
+  }
+  .discovery-title {
+    font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item {
+    font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px;
+  }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  /* ===== チャレンジ ===== */
+  .challenge-box {
+    border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px;
+    background: var(--purple-light); margin-bottom: 16px;
+  }
+  .challenge-title {
+    font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>📚 第4回のステップ</span>
+        <span id="progress-text">0 / 5 完了</span>
+      </div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label">
+        <span>気づく</span><span>比べる</span><span>試す</span>
+        <span>まとめ</span><span>チャレンジ</span>
+      </div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<!-- MYPAGE / BADGE POPUP -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 4;
+
+const STEPS = [
+  // STEP 0: 気づく
+  {
+    icon: '📚',
+    iconBg: '#FFF8EB',
+    tag: 'STEP 1',
+    tagColor: '#FFF8EB',
+    tagText: '#b87d00',
+    title: 'AIは何も知らない——だから教えてあげよう',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">Claudeはとても賢いけど、<strong>きみのことは何も知らない</strong>。<br>
+      名前も、学年も、好きなことも、苦手なことも——全部ゼロからのスタートだよ。</p>
+      <p class="lesson-text">でも、<strong>自分のことを教えてあげると</strong>、Claudeの答えが一気に変わる。<br>
+      「誰でも使える答え」から「きみだけのための答え」になるんだ。</p>
+      <div class="info-box">
+        <b>📚 今日学ぶこと：</b><br>
+        プロンプトに<b>自分の情報</b>（学年・得意不得意・住んでいる場所・目標など）を加えると、<br>
+        AIの答えが自分の状況にぴったり合ったものになる！
+      </div>
+    `,
+    quiz: {
+      question: 'AIに「私は小学5年生で算数が苦手です」と伝えると何が変わる？',
+      options: [
+        'AIが算数の問題を出してくれなくなる',
+        '小学5年生の算数レベルに合わせた、わかりやすい説明をしてくれる',
+        'AIが難しい言葉を使わなくなる',
+        '特に何も変わらない'
+      ],
+      answer: 1,
+      ok: '🎉 正解！情報を渡すほど、AIはきみの状況に合わせた答えを返してくれるよ。「誰かへの答え」ではなく「きみへの答え」になる！',
+      ng: '🤔 惜しい！正解は「学年レベルに合わせた説明をしてくれる」だよ。AIに自分の状況を教えると、それに合わせてくれる。情報が多いほど答えの質が上がるんだ！'
+    }
+  },
+
+  // STEP 1: 比べる
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '情報を増やすと答えはどう変わる？',
+    type: 'compare',
+    content: `
+      <p class="lesson-text">「夏休みの自由研究のテーマを提案して」という同じ質問を、<br>
+      伝える情報の量を変えながらClaudeに聞いてみたよ。比べてみよう！</p>
+    `,
+    examples: [
+      {
+        label: '情報なし　そのまま聞く',
+        labelClass: 'v-basic',
+        prompt: '夏休みの自由研究のテーマを提案して',
+        response: '自由研究のテーマをいくつか提案します。\n・植物の成長観察日記\n・天気と気温の記録\n・料理の実験（野菜の色素など）\n・プログラミングで簡単なゲームを作る\n・川や海の生き物の観察'
+      },
+      {
+        label: '情報①　「小学5年生です」だけ追加',
+        labelClass: 'v-good',
+        prompt: '私は小学5年生です。夏休みの自由研究のテーマを提案して。',
+        response: '小学5年生向けの自由研究テーマを提案するね！\n\n①虫の観察日記🐛\nカブトムシやセミを毎日観察して記録しよう。5年生なら理科の知識が活かせる！\n\n②料理の科学実験🍳\n同じ材料でも分量を変えるとどう変わる？実験してみよう。\n\n③天気予報の精度チェック☀️\n毎日テレビの予報と実際の天気を比べて記録してみよう。'
+      },
+      {
+        label: '情報②　学年・好きなこと・住んでいる場所を全部追加',
+        labelClass: 'v-great',
+        prompt: '私は小学5年生で、サッカーが好きで、理科が得意で、北九州に住んでいます。夏休みの自由研究のテーマを私の状況に合わせて提案してください。',
+        response: '北九州の小学5年生で、サッカー好き、理科得意なんだね！きみにぴったりのテーマを考えたよ！\n\n⚽ ①サッカーと科学の実験\n芝生の草の種類と育ち方を調べよう。北九州のグラウンドの土と公園の土を比べると面白い発見があるかも。理科の知識をフル活用できる！\n\n🌊 ②北九州の環境変化を調べる\n北九州は昔「公害の街」と呼ばれたけど、市民の努力できれいな海がよみがえった。洞海湾の水質や生き物の今を調べると、地元への理解が深まるよ！\n\n🌡️ ③サッカーに最適な気象条件を科学する\n気温・湿度・風速がサッカーのパフォーマンスにどう影響するか調べてみよう。北九州は海に近いから風のデータが面白い。試合映像と気象データを組み合わせた発表になるよ！'
+      }
+    ]
+  },
+
+  // STEP 2: 試す
+  {
+    icon: '✏️',
+    iconBg: '#FFF8EB',
+    tag: 'STEP 3',
+    tagColor: '#FFF8EB',
+    tagText: '#b87d00',
+    title: 'じぶんの情報をAIに教えよう！',
+    type: 'try',
+    content: `
+      <p class="lesson-text">今度はじぶんで試してみよう！<br>
+      テーマを選んで、自分の情報を<strong>2つ以上</strong>選ぶと、3種類のプロンプトが作られるよ。</p>
+    `,
+    topics: [
+      { label: '🔬 自由研究のテーマ',   base: '夏休みの自由研究のテーマ' },
+      { label: '📖 本のおすすめ',        base: '読んでみたい本のおすすめ' },
+      { label: '💪 勉強法のアドバイス',  base: '勉強法のアドバイス' },
+      { label: '🍳 料理のレシピ',        base: '作れそうな料理のレシピ' },
+      { label: '🌍 行ってみたい旅先',    base: '行ってみたい旅行先' },
+    ],
+    infoTags: [
+      { label: '🏫 小学4年生', base: '小学4年生' },
+      { label: '🏫 小学5年生', base: '小学5年生' },
+      { label: '🏫 小学6年生', base: '小学6年生' },
+      { label: '🏫 中学生',   base: '中学生' },
+      { label: '⚽ スポーツが好き', base: 'スポーツが好き' },
+      { label: '📖 読書が好き',    base: '読書が好き' },
+      { label: '🎮 ゲームが好き',  base: 'ゲームが好き' },
+      { label: '🐾 動物が好き',    base: '動物が好き' },
+      { label: '🔬 理科が得意',    base: '理科が得意' },
+      { label: '📐 算数が苦手',    base: '算数が苦手' },
+      { label: '🌊 北九州に住んでいる', base: '北九州に住んでいる' },
+    ]
+  },
+
+  // STEP 3: まとめ
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：情報提供の3つのコツ',
+    type: 'summary',
+    content: `
+      <p class="lesson-text">情報を渡すほど答えが自分向けになることを体験したね。<br>まとめてみよう！</p>
+    `,
+    discoveries: [
+      { text: '<b>自分のレベルを伝える：</b>学年・得意不得意を書くと、難しすぎず簡単すぎない説明になる' },
+      { text: '<b>状況・背景を伝える：</b>「北九州に住んでいる」「サッカーが好き」など具体的な状況が答えをリアルにする' },
+      { text: '<b>目的・ゴールを伝える：</b>「発表会で使いたい」「10分でできる方法がいい」など目的を足すと精度が最大化する' },
+    ],
+    quiz: {
+      question: 'AIに情報を渡すとき、一番効果的なのはどれ？',
+      options: [
+        '「詳しく教えて」とだけ書く',
+        '学年・得意不得意・住んでいる場所など自分の具体的な状況を書く',
+        '同じ質問を何回も送る',
+        '長い文章で送る'
+      ],
+      answer: 1,
+      ok: '🌟 正解！「誰でもあてはまること」ではなく「じぶんだけの情報」を渡すのがコツ。学年・状況・目標をセットで伝えると最強のプロンプトになるよ！',
+      ng: '🤔 惜しい！正解は「自分の具体的な状況を書く」だよ。AIは情報がないと「誰かへの答え」しか出せない。学年・得意不得意・目的などを渡すほど「きみへの答え」になるんだ！'
+    }
+  },
+
+  // STEP 4: チャレンジ
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：情報提供をもっと深く',
+    type: 'challenge',
+    content: `
+      <p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ。<br>
+      情報提供をもっとうまく使いこなしてみよう！</p>
+    `,
+    challenges: [
+      {
+        level: '★',
+        title: '「じぶんプロフィール」を作ってClaudeに渡そう',
+        desc: '名前・学年・好きなこと・苦手なこと・住んでいる場所・将来の夢を全部書いたプロフィールをClaudeに渡して、自己紹介文を作ってもらおう。どれだけ「じぶんらしい」文章になる？',
+        hint: '例：「私は北九州市門司区に住む小学5年生です。サッカーが好きで、算数が少し苦手です。将来は…」'
+      },
+      {
+        level: '★★',
+        title: '「北九州の情報」をAIに教えて地元の課題を解決しよう',
+        desc: '北九州の特徴（産業・観光・課題・歴史）をAIに教えてから、「北九州の子どもが楽しめる放課後の過ごし方を提案して」と聞いてみよう。情報なしで聞いた場合と比べてどう違う？',
+        hint: 'ヒント：「北九州は鉄の街として有名で、門司港レトロがあり、若者が減っています」など背景情報を先に伝えよう'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）情報を渡しすぎるリスクを考えよう',
+        desc: 'AIに詳しい情報を渡すほど答えが良くなる——でも、住所・電話番号・家族の情報などを渡しすぎると何が起きる？プライバシーとAI活用のバランスをClaudeと一緒に考えてみよう。',
+        hint: 'キーワード：プライバシー、個人情報、データの安全性。「どこまで教えてよい情報か？」の自分なりの基準を作ってみよう'
+      }
+    ]
+  }
+];
+
+// ===== STATE =====
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  triedInfo: false,
+  selectedTopic: null,
+  selectedInfoTags: [],
+};
+
+// ===== INIT =====
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson4-state') || '{}');
+  if (saved.selectedInfoTags === undefined) saved.selectedInfoTags = [];
+  stepState = { ...stepState, ...saved };
+
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson4-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) {
+    state.lessonCompleted[LESSON_ID] = true;
+  }
+  saveState();
+}
+
+// ===== RENDER =====
+function renderApp() {
+  renderProgress();
+  renderStep(stepState.currentStep);
+}
+
+function renderProgress() {
+  const total = STEPS.length;
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + total + ' 完了';
+  const pills = document.getElementById('progress-steps');
+  pills.innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const maxReached = Math.max(...stepState.completedSteps, 0);
+  if (i <= maxReached + 1) {
+    stepState.currentStep = i;
+    renderApp();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `
+    <div class="lesson-card">
+      <div class="lesson-header">
+        <div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div>
+        <div class="lesson-meta">
+          <span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span>
+          <div class="lesson-title">${step.title}</div>
+        </div>
+      </div>
+      <div class="lesson-body">
+        ${step.content}
+  `;
+
+  if      (step.type === 'intro')     html += renderIntro(step, idx);
+  else if (step.type === 'compare')   html += renderCompare(step, idx);
+  else if (step.type === 'try')       html += renderTry(step, idx);
+  else if (step.type === 'summary')   html += renderSummaryStep(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+
+  if (stepState.completedSteps.length === STEPS.length) {
+    html += renderCompleteCard();
+  }
+
+  container.innerHTML = html;
+}
+
+// ===== STEP RENDERERS =====
+function renderIntro(step, idx) {
+  return renderQuiz(step.quiz, idx);
+}
+
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach(ex => {
+    html += `
+      <div class="compare-card">
+        <div class="compare-header ${ex.labelClass}">${ex.label}</div>
+        <div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div>
+        <div class="compare-result">${escHtml(ex.response)}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  html += `
+    <div class="discovery-box">
+      <div class="discovery-title">🔍 気づいたこと</div>
+      <div class="discovery-items">
+        <div class="discovery-item">情報なしは「誰にでも当てはまる答え」。使えるけど、じぶんには合っていないかも。</div>
+        <div class="discovery-item">学年を伝えるだけで、言葉遣いや難しさが変わった！情報が1つでもかなり違う。</div>
+        <div class="discovery-item">「北九州・サッカー・理科が得意」の3つを伝えたら、北九州の特徴を使った完全オリジナルの提案が出てきた！</div>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+function renderTry(step, idx) {
+  const topic = stepState.selectedTopic;
+  const tags  = stepState.selectedInfoTags;
+  const count = tags.length;
+
+  let html = `
+    <div class="try-area">
+      <div class="try-area-header">✏️ テーマと自分の情報を選ぼう</div>
+
+      <div class="try-topic-row">
+        <div class="try-topic-label">① テーマを選んでね</div>
+        <div class="topic-chips">
+          ${step.topics.map(t => `
+            <span class="topic-chip ${topic && topic.base === t.base ? 'active' : ''}"
+              onclick="selectTopic('${escHtml(t.base)}','${escHtml(t.label)}')">${t.label}</span>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="try-topic-row">
+        <div class="try-topic-label">② じぶんの情報を<b>2つ以上</b>選んでね（いくつでもOK）</div>
+        <div class="info-tag-wrap">
+          ${step.infoTags.map(t => `
+            <span class="info-tag-chip ${tags.some(s => s.base === t.base) ? 'active' : ''}"
+              onclick="toggleInfoTag('${escHtml(t.base)}','${escHtml(t.label)}')">${t.label}</span>
+          `).join('')}
+        </div>
+        <div>
+          <span class="info-count-badge ${count >= 2 ? 'ok' : 'need'}">
+            ${count >= 2 ? '✅ ' + count + '個選択中' : count === 0 ? '👆 選んでみよう' : 'あと' + (2 - count) + '個選んでね'}
+          </span>
+        </div>
+      </div>
+  `;
+
+  if (topic && count >= 2) {
+    const allInfo = tags.map(t => t.base).join('、');
+    const p1 = topic.base + 'を教えてください。';
+    const p2 = '私は' + tags[0].base + 'です。' + topic.base + 'を教えてください。';
+    const p3 = '私は' + allInfo + 'です。私の状況に合わせて' + topic.base + 'を教えてください。';
+
+    html += `
+      <div class="try-versions">
+        <div class="try-version-row">
+          <span class="version-tag v-basic">①情報なし</span>
+          <div class="try-prompt-text">${escHtml(p1)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-good">②1つだけ</span>
+          <div class="try-prompt-text">${escHtml(p2)}</div>
+        </div>
+        <div class="try-version-row">
+          <span class="version-tag v-great">③全部伝える</span>
+          <div class="try-prompt-text">${escHtml(p3)}</div>
+        </div>
+      </div>
+      <button class="btn-try-all" onclick="sendAllPrompts()">
+        🚀 3つ全部Claudeで試す
+      </button>
+    `;
+  }
+
+  html += '</div>';
+
+  if (stepState.triedInfo) {
+    html += `
+      <div class="launcher-done" style="text-align:center;margin-bottom:12px">
+        ✅ 試したね！情報の量で答えがどれだけ変わったか気づいた？
+      </div>
+    `;
+  }
+
+  return html;
+}
+
+function renderSummaryStep(step, idx) {
+  let html = `
+    <div class="discovery-box">
+      <div class="discovery-title">💡 情報提供の3つのコツ</div>
+      <div class="discovery-items">
+        ${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step, idx) {
+  let html = `
+    <div class="challenge-box">
+      <div class="challenge-title">⭐ チャレンジミッション</div>
+      <div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div>
+    </div>
+  `;
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px">
+          <span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span>
+        </div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div>
+      <div class="quiz-options">
+  `;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) {
+      if (oi === quiz.answer) cls += ' correct';
+      else if (oi === answered) cls += ' wrong';
+    }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) {
+    const ok = answered === quiz.answer;
+    html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx];
+  const isLast = idx === STEPS.length - 1;
+  const isCompleted = stepState.completedSteps.includes(idx);
+
+  const needQuiz  = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needTopic = step.type === 'try' && !stepState.selectedTopic;
+  const needInfo  = step.type === 'try' && stepState.selectedInfoTags.length < 2;
+  const needTry   = step.type === 'try' && !stepState.triedInfo;
+  const blocked   = needQuiz || needTopic || needInfo || needTry;
+
+  const remaining = 2 - stepState.selectedInfoTags.length;
+  const hint = needTopic ? '👆 まずテーマを選んでね！'
+             : needInfo  ? `👆 自分の情報をあと${remaining}つ選んでね！`
+             : needTry   ? '🚀 まずClaudeで試してみよう！'
+             : needQuiz  ? '❓ クイズに答えてから進もう！'
+             : isLast    ? '🏆 授業を完了する！'
+             : '次のステップへ ➡️';
+
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  const color  = isLast ? 'var(--coral)' : 'var(--mint)';
+
+  if (isCompleted && !isLast) {
+    return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  }
+  return `<button class="btn-next" style="${isLast ? 'background:' + color : ''}"
+    id="btn-next-${idx}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `
+    <div class="complete-card">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">第4回クリア！</div>
+      <div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>Block①「AIと仲良くなる」全4回、完了！</div>
+      <div class="stars">
+        <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">
+        プロンプトの4つの武器——<b>条件・役割・情報・形式</b>——の<br>
+        うち3つを学んだよ。次回からBlock②で作品を作るよ！
+      </div>
+      <a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        🏠 トップにもどる
+      </a>
+    </div>
+  `;
+}
+
+// ===== ACTIONS =====
+function nextStep(idx) {
+  const isNew = !stepState.completedSteps.includes(idx);
+  if (isNew) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState();
+  renderApp();
+  showToast('🎉 第4回完了！Block① 全部クリア！');
+}
+
+function answerQuiz(stepIdx, optIdx) {
+  stepState.quizAnswered[stepIdx] = optIdx;
+  saveStepState();
+  renderStep(stepIdx);
+}
+
+function selectTopic(base, label) {
+  stepState.selectedTopic = { base, label };
+  stepState.triedInfo = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function toggleInfoTag(base, label) {
+  const idx = stepState.selectedInfoTags.findIndex(t => t.base === base);
+  if (idx >= 0) {
+    stepState.selectedInfoTags.splice(idx, 1);
+  } else {
+    stepState.selectedInfoTags.push({ base, label });
+  }
+  stepState.triedInfo = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function sendAllPrompts() {
+  if (!stepState.selectedTopic || stepState.selectedInfoTags.length < 2) return;
+  window.open('https://claude.ai/new', '_blank');
+  stepState.triedInfo = true;
+  saveStepState();
+
+  const topic = stepState.selectedTopic.base;
+  const tags  = stepState.selectedInfoTags;
+  const allInfo = tags.map(t => t.base).join('、');
+  const prompts = [
+    '①情報なし：' + topic + 'を教えてください。',
+    '②1つだけ：私は' + tags[0].base + 'です。' + topic + 'を教えてください。',
+    '③全部伝える：私は' + allInfo + 'です。私の状況に合わせて' + topic + 'を教えてください。'
+  ].join('\n\n');
+  navigator.clipboard.writeText(prompts).catch(() => {});
+
+  showToast('🚀 Claudeが開いたよ！3つのプロンプトを順番に試してみよう！');
+  renderStep(stepState.currentStep);
+}
+
+function openClaude() {
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeを開いたよ！');
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
