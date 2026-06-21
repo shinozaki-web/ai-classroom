@@ -165,7 +165,7 @@ const LESSONS = [
     `,
     mission: {
       text: '🎯 ミッション：Claudeに何でも聞いてみよう！うまく伝わったかな？うまく伝わらなかったときは、聞き方を変えてみよう。',
-      hints: ['好きな食べ物のレシピを聞く', 'なぞなぞを出してもらう', '地球はなぜ丸いの？', '宿題のアイデアをくれ！']
+      hints: ['好きな食べ物のレシピを聞く', 'なぞなぞを出してもらう', '門司港のことを教えて！', '宿題のアイデアをくれ！']
     },
     hasChat: true,
     quiz: null
@@ -250,7 +250,8 @@ function renderProgress() {
 }
 
 function goToStep(i) {
-  if (i <= Math.max(...state.completedSteps, 0) || i === 0) {
+  const maxReached = Math.max(...state.completedSteps, 0);
+  if (i <= maxReached + 1) {
     state.currentStep = i;
     renderApp();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -346,7 +347,7 @@ function renderLesson(idx) {
         if (oi === lesson.quiz.answer) cls += ' correct';
         else if (oi === answered && answered !== lesson.quiz.answer) cls += ' wrong';
       }
-      html += `<button class="quiz-opt${answered!==undefined ? (oi===lesson.quiz.answer?' correct':oi===answered?' wrong':'') : ''}" onclick="answerQuiz(${idx},${oi})" ${answered!==undefined?'disabled':''}>${escHtml(opt)}</button>`;
+      html += `<button class="${cls}" onclick="answerQuiz(${idx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
     });
     html += `</div>`;
     if (answered !== undefined) {
@@ -386,11 +387,10 @@ function renderLesson(idx) {
 
 function renderCompleteCard() {
   const totalChats = state.chatCounts.reduce((a, b) => a + b, 0);
-  const minutes = Math.floor((Date.now() - state.startTime) / 60000);
   return `
     <div class="complete-card">
       <span class="complete-emoji">🎉</span>
-      <div class="complete-title">授業クリア！</div>
+      <div class="complete-title">第1回クリア！</div>
       <div class="complete-sub">${escHtml(state.name)}さん、お疲れさま！<br>今日はAIのことをたくさん学んだね。</div>
       <div class="stars">
         <span class="star">⭐</span>
@@ -407,16 +407,18 @@ function renderCompleteCard() {
           <div class="summary-label">Claudeとの会話数</div>
         </div>
       </div>
-      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7">
-        「AIは現代の文房具」。<br>
-        使いこなすのはきみ自身だよ！✏️
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">
+        「AIは現代の文房具」。使いこなすのはきみ自身だよ！✏️<br>
+        次回は「聞き方を変えると変わる」を学ぶよ！
       </div>
+      <a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        🏠 トップにもどる
+      </a>
     </div>
   `;
 }
 
 
-// ===== ACTIONS =====
 // ===== ACTIONS =====
 function nextStep(idx) {
   const isNew = !state.completedSteps.includes(idx);
@@ -433,9 +435,11 @@ function complete() {
   const idx = LESSONS.length - 1;
   const isNew = !state.completedSteps.includes(idx);
   if (isNew) state.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[1] = true;
   saveState();
   renderApp();
-  showToast('🎉 授業完了！すごい！');
+  showToast('🎉 第1回完了！すごい！');
   if (isNew) setTimeout(() => awardBadgePopup(idx), 800);
 }
 
@@ -481,8 +485,6 @@ if (state.name) {
   document.getElementById('header-name').textContent = state.name + 'さん';
   renderApp();
 }
-</script>
-
 </script>
 </body>
 </html>
