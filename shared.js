@@ -183,7 +183,9 @@ let state = {
   currentStep: 0,
   completedSteps: [],
   quizAnswered: [],
-  chatCounts: [0, 0, 0, 0, 0],
+  chatCounts: [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  lessonCompleted: {},
+  seenBadges: [],
   startTime: Date.now()
 };
 
@@ -304,6 +306,9 @@ function awardBadgePopup() {
   const idx = checks.findIndex((earned, i) => earned && !seen.includes(BADGES[i].id));
   if (idx < 0) return;
   const badge = BADGES[idx];
+  if (!state.seenBadges) state.seenBadges = [];
+  state.seenBadges.push(badge.id);
+  saveState();
   document.getElementById('bp-svg').innerHTML = getBadgeSVG(badge, 100);
   document.getElementById('bp-sub').textContent = '「' + badge.stepLabel + '」達成！\n' + badge.desc;
   document.getElementById('bp-name').textContent = badge.name + 'バッジをゲット！🎊';

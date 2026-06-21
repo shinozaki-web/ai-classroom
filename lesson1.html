@@ -478,6 +478,9 @@ function showToast(msg) {
 
 // ===== BOOT =====
 loadState();
+const _params = new URLSearchParams(location.search);
+const _nameParam = _params.get('name');
+if (_nameParam && !state.name) { state.name = _nameParam; saveState(); }
 if (state.name) {
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';

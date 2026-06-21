@@ -741,6 +741,9 @@ function renderNextBtn(idx) {
   if (isCompleted && !isLast) {
     return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
   }
+  if (isCompleted && isLast) {
+    return '';
+  }
 
   return `<button class="btn-next" style="${isLast ? 'background:' + color : ''}"
     id="btn-next-${idx}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
