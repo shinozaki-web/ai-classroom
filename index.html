@@ -361,7 +361,7 @@ function renderBadgeMini() {
     return `<div class="badge-mini">
       <div class="badge-mini-circle ${earned ? '' : 'locked'}"
            style="${earned ? 'background:' + b.bg + ';border:2px solid ' + b.border : ''}">
-        <svg viewBox="0 0 100 100" width="38" height="38" xmlns="http://www.w3.org/2000/svg">${b.svgContent}</svg>
+        ${getBadgeSVG(b, 38)}
       </div>
       <div class="badge-mini-name">${earned ? b.name : '？？？'}</div>
     </div>`;
