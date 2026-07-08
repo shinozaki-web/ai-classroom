@@ -220,6 +220,9 @@ function init() {
   loadState();
   const saved = JSON.parse(localStorage.getItem('lesson8-state') || '{}');
   stepState = { ...stepState, ...saved };
+  const _p = new URLSearchParams(location.search);
+  const _n = _p.get('name');
+  if (_n && !state.name) { state.name = _n; saveState(); }
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
   renderApp();

@@ -348,7 +348,7 @@ function init() {
 
   const params = new URLSearchParams(location.search);
   const nameParam = params.get('name');
-  if (nameParam && !state.name) state.name = nameParam;
+  if (nameParam && !state.name) { state.name = nameParam; saveState(); }
 
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';

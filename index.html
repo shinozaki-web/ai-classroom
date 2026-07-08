@@ -181,6 +181,9 @@
     </div>
 
     <button class="btn-register" onclick="register()">決定 🚀</button>
+    <div style="font-size:11px;color:#999;text-align:center;margin-top:8px;line-height:1.5">
+      ⚠️ このデータはこのブラウザにのみ保存されます。<br>別のパソコンやタブレットでは引き継がれません。
+    </div>
   </div>
 
   <!-- 登録済みプロフィール -->
@@ -401,13 +404,12 @@ loadState();
 _selectedGrade = state.grade || '';
 _selectedWard  = state.ward  || '';
 
-if (state.name && state.grade && state.ward) {
-  // 登録済み → プロフィール表示
+if (state.name) {
+  // 登録済み（名前があればOK・学年/区は任意）
   document.getElementById('header-name').textContent = state.name + 'さん';
   showProfile();
 } else {
-  // 未登録 or 未完了 → フォームを出して既存値を復元
-  if (state.name) document.getElementById('name-input').value = state.name;
+  // 未登録 → フォームを出す（既存値があれば復元）
   if (state.classCode && state.classCode !== 'なし') document.getElementById('class-input').value = state.classCode;
   document.querySelectorAll('#grade-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedGrade));
   document.querySelectorAll('#ward-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedWard));
