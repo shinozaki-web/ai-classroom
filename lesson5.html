@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第5回：詩・物語を作る | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ===== 比較カード ===== */
+  .compare-wrap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .compare-card { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); }
+  .compare-header { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .compare-prompt { background: var(--white); padding: 12px 16px; font-size: 14px; color: var(--ink-mid); border-bottom: 1px solid #F0F2FA; line-height: 1.6; }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result { background: #FAFBFF; padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; min-height: 56px; white-space: pre-wrap; }
+  .v-basic { background: #F1EFE8; color: #5F5E5A; }
+  .v-good  { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great { background: var(--mint-light); color: #1a7a4a; }
+
+  /* ===== 詩づくりエリア ===== */
+  .poem-builder {
+    background: var(--white); border-radius: 14px;
+    box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px;
+  }
+  .poem-builder-header {
+    background: var(--coral); color: white; padding: 10px 16px;
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .poem-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .poem-section:last-child { border-bottom: none; }
+  .poem-section-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+
+  .genre-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .genre-chip {
+    background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid);
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .genre-chip:hover, .genre-chip.active { background: var(--coral); color: white; border-color: var(--coral); }
+
+  .mood-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mood-chip {
+    background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid);
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mood-chip:hover, .mood-chip.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  .keyword-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid #E0E4F0; border-radius: 10px;
+    font-size: 14px; font-family: 'Noto Sans JP', sans-serif; outline: none;
+    color: var(--ink); box-sizing: border-box; transition: border-color 0.2s;
+  }
+  .keyword-input:focus { border-color: var(--coral); }
+
+  .prompt-preview {
+    background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0;
+    padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7;
+    min-height: 60px; margin-top: 8px; white-space: pre-wrap;
+  }
+
+  .btn-create {
+    width: calc(100% - 32px); margin: 12px 16px; padding: 14px;
+    background: var(--coral); color: white; border: none; border-radius: 12px;
+    font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 8px; transition: background 0.2s;
+  }
+  .btn-create:hover { background: #d94f3e; }
+  .btn-create:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ===== 気づきボックス ===== */
+  .discovery-box {
+    background: var(--amber-light); border: 2px solid var(--amber);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;
+  }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  /* ===== チャレンジ ===== */
+  .challenge-box {
+    border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px;
+    background: var(--purple-light); margin-bottom: 16px;
+  }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+
+  /* ===== 作品サンプルカード ===== */
+  .poem-sample {
+    background: #FFF8F6; border: 2px solid #F5A7A0; border-radius: 14px;
+    padding: 16px; margin-bottom: 12px; text-align: center;
+  }
+  .poem-sample-title { font-size: 12px; font-weight: 700; color: #c0392b; margin-bottom: 10px; }
+  .poem-sample-text {
+    font-size: 15px; color: var(--ink); line-height: 2; font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label">
+        <span>📚 第5回のステップ</span>
+        <span id="progress-text">0 / 5 完了</span>
+      </div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label">
+        <span>気づく</span>
+        <span>比べる</span>
+        <span>作る</span>
+        <span>まとめ</span>
+        <span>チャレンジ</span>
+      </div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<!-- MYPAGE / BADGE POPUP -->
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 5;
+
+const STEPS = [
+  // STEP 0: 気づく
+  {
+    icon: '✍️',
+    iconBg: '#FFF0EE',
+    tag: 'STEP 1',
+    tagColor: '#FFF0EE',
+    tagText: '#c0392b',
+    title: 'AIと一緒に「作品」を作ろう！',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">Block①では「うまく聞く」テクニックを学んだよね。<br>
+      Block②からは、そのテクニックを使って<strong>本物の作品を作る</strong>ことに挑戦するよ！</p>
+      <p class="lesson-text">今日は<strong>詩や短い物語</strong>をAIと一緒に作ってみよう。<br>
+      大事なポイントは「全部AIに任せる」のではなく、<strong>自分のアイデアをAIに届ける</strong>こと。</p>
+      <div class="info-box">
+        <b>✍️ 今日学ぶこと：</b><br>
+        「テーマ・気分・キーワード」を自分で決めてAIに渡すと、<br>
+        <b>きみのアイデアが詩や物語になって返ってくる！</b><br>
+        修正・注文をくり返すのが「AIとの共作」のコツ。
+      </div>
+    `,
+    quiz: {
+      question: 'AIと詩を作るとき、一番大切なのはどれ？',
+      options: [
+        '全部AIに「詩を書いて」と頼む',
+        '自分のテーマ・気分・使いたい言葉を伝えてからAIに書いてもらう',
+        'AIが書いたものをそのまま提出する',
+        '英語で指示を出す'
+      ],
+      answer: 1,
+      ok: '🎉 正解！自分のアイデアをきちんとAIに伝えることが「共作」のカギ。AIは材料があるほど、きみらしい作品を作ってくれるよ！',
+      ng: '🤔 惜しい！「全部任せる」だと誰でも同じ詩になっちゃう。自分のテーマや気分・キーワードを伝えることで「じぶんだけの詩」になるんだ！'
+    }
+  },
+
+  // STEP 1: 比べる
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '指示の量で作品がどう変わる？',
+    type: 'compare',
+    content: `
+      <p class="lesson-text">同じ「詩を作って」という指示でも、<strong>情報の量</strong>で全然違う作品になるよ。<br>
+      実際に比べてみよう！</p>
+    `,
+    examples: [
+      {
+        label: '指示①　ただ「詩を書いて」',
+        labelClass: 'v-basic',
+        prompt: '詩を書いてください。',
+        response: '空は青く、風は優しい。\n鳥たちは歌い、花は笑う。\n今日も世界は美しい。\n君の心にも光を。'
+      },
+      {
+        label: '指示②　テーマと気分を伝える',
+        labelClass: 'v-good',
+        prompt: '北九州の海をテーマに、少し寂しくて懐かしい感じの詩を書いてください。',
+        response: '潮風が髪をなでる\n洞海湾の夕暮れに\n工場の煙が溶けていく\n\nここで働いた人たちの\n手のひらの温かさが\nまだ海の底にある気がして\n\nカモメが一羽\n西の空へ消えていった'
+      },
+      {
+        label: '指示③　テーマ・気分・使いたい言葉を全部伝える',
+        labelClass: 'v-great',
+        prompt: '北九州の海をテーマに、少し寂しくて懐かしい感じの詩を書いてください。必ず「焼きうどん」「ていたん」「門司港」という言葉を使い、小学生でも読める言葉で5〜7行にまとめてください。',
+        response: '門司港の波止場で\nていたんと食べた焼きうどん\nソースの匂いが潮風に混ざって\n\nあの夏の夕日はもう帰らない\nでも船の汽笛を聞くたびに\nきみのことを思い出す\n\n北九州はやっぱりいいな'
+      }
+    ]
+  },
+
+  // STEP 2: 作る（詩づくり体験）
+  {
+    icon: '🎨',
+    iconBg: '#FFF0EE',
+    tag: 'STEP 3',
+    tagColor: '#FFF0EE',
+    tagText: '#c0392b',
+    title: 'じぶんの詩を作ろう！',
+    type: 'create',
+    content: `
+      <p class="lesson-text">いよいよ<strong>じぶんの詩を作ろう</strong>！<br>
+      ジャンル・気分・使いたいキーワードを入力すると、Claudeへのプロンプトが作られるよ。</p>
+    `
+  },
+
+  // STEP 3: まとめ
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：AIと共作する3つのコツ',
+    type: 'summary',
+    content: `
+      <p class="lesson-text">AIと詩・物語を作る体験ができたね。<br>まとめてみよう！</p>
+    `,
+    discoveries: [
+      { text: '<b>アイデアは自分が出す：</b>テーマ・気分・使いたい言葉は自分で決める。AIはそれを「形にする道具」だよ' },
+      { text: '<b>注文をくり返す：</b>最初の答えで終わらず「もっと短く」「もっと明るい感じで」と修正を重ねるのが共作のコツ' },
+      { text: '<b>ひと言加えて自分のものにする：</b>AIが書いた詩の1行を自分で書き直すだけで、一気に「自分の作品」になるよ' },
+    ],
+    quiz: {
+      question: 'AIと詩を作るとき「共作」と言えるのはどれ？',
+      options: [
+        '「詩を書いて」と送って出てきたものをそのまま使う',
+        'テーマを自分で決め、AIに書いてもらい、自分で1行修正する',
+        'AIが書いた詩を先生に提出する',
+        'AIに「最高の詩を書いて」と頼む'
+      ],
+      answer: 1,
+      ok: '🌟 正解！「自分のアイデア＋AIの表現力＋自分の仕上げ」が本物の共作！どこかに自分の手が入ると、それはじぶんの作品になるよ。',
+      ng: '🤔 惜しい！「共作」は自分も作業に参加することだよ。テーマを決める→AIに書いてもらう→自分で修正する、この流れがあって初めて「共作」になるんだ。'
+    }
+  },
+
+  // STEP 4: チャレンジ
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：作品をもっと深めよう',
+    type: 'challenge',
+    content: `
+      <p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ。<br>
+      作品をもっと磨いてみよう！</p>
+    `,
+    challenges: [
+      {
+        level: '★',
+        title: 'AIの詩を1行だけ自分で書き直してみよう',
+        desc: 'STEPで作った詩の中で「ここは自分ならこう書く！」という行を1つ選んで、自分の言葉に書き直してみよう。どこが変わった？',
+        hint: 'ヒント：比喩や色・音を表す言葉を変えると雰囲気がガラッと変わるよ。「夕日」→「だいだい色の空」など。'
+      },
+      {
+        level: '★★',
+        title: '同じテーマで「詩」と「物語の書き出し」の両方を作ろう',
+        desc: '同じテーマ（例：「北九州の夏」）で詩バージョンと物語バージョンの2つをAIに作ってもらおう。表現方法が違うと何が変わる？',
+        hint: '物語の書き出しは「ある日、〇〇は…」のように始めてもらおう。詩との違いを比べてみよう。'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）「AIのクセ」を発見しよう',
+        desc: '同じお題で詩を3回作ってもらうと、AIはどんな言葉・構造・表現をくり返す傾向がある？その「パターン」を見つけてまとめてみよう。',
+        hint: 'キーワード：AIの文体・バイアス・学習データ。「なぜAIはこの表現をよく使うの？」とClaudeに聞いてみるのもいいよ。'
+      }
+    ]
+  }
+];
+
+// ===== STATE =====
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  selectedGenre: null,
+  selectedMood: null,
+  keywords: '',
+  triedCreate: false,
+};
+
+const GENRES = [
+  { label: '🌊 海・自然', base: '北九州の海・自然' },
+  { label: '🏙️ 街・北九州', base: '北九州の街と歴史' },
+  { label: '🍜 食べ物', base: '北九州の食べ物（焼きうどん・焼きカレーなど）' },
+  { label: '🌙 夜・星', base: '夜空と星' },
+  { label: '👫 友達・仲間', base: '友達との思い出' },
+  { label: '⚽ スポーツ', base: '全力でがんばるスポーツ' },
+];
+
+const MOODS = [
+  { label: '😊 明るく楽しい', base: '明るく楽しい' },
+  { label: '😌 おだやかで懐かしい', base: 'おだやかで懐かしい' },
+  { label: '🔥 熱くて力強い', base: '熱くて力強い' },
+  { label: '🌧️ 少し寂しい', base: '少し寂しくて切ない' },
+  { label: '🤩 ワクワクする', base: 'わくわくドキドキする' },
+];
+
+// ===== INIT =====
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson5-state') || '{}');
+  stepState = { ...stepState, ...saved };
+
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson5-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) {
+    state.lessonCompleted[LESSON_ID] = true;
+  }
+  saveState();
+}
+
+// ===== RENDER =====
+function renderApp() {
+  renderProgress();
+  renderStep(stepState.currentStep);
+}
+
+function renderProgress() {
+  const total = STEPS.length;
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + total + ' 完了';
+  const pills = document.getElementById('progress-steps');
+  pills.innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const maxReached = Math.max(...stepState.completedSteps, 0);
+  if (i <= maxReached + 1) {
+    stepState.currentStep = i;
+    renderApp();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `
+    <div class="lesson-card">
+      <div class="lesson-header">
+        <div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div>
+        <div class="lesson-meta">
+          <span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span>
+          <div class="lesson-title">${step.title}</div>
+        </div>
+      </div>
+      <div class="lesson-body">
+        ${step.content}
+  `;
+
+  if      (step.type === 'intro')     html += renderIntro(step, idx);
+  else if (step.type === 'compare')   html += renderCompare(step, idx);
+  else if (step.type === 'create')    html += renderCreate(step, idx);
+  else if (step.type === 'summary')   html += renderSummaryStep(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+
+  if (stepState.completedSteps.length === STEPS.length) {
+    html += renderCompleteCard();
+  }
+
+  container.innerHTML = html;
+
+  // キーワード入力のイベントを設定（DOMが生成された後）
+  const kw = document.getElementById('keyword-input');
+  if (kw) {
+    kw.value = stepState.keywords || '';
+    kw.addEventListener('input', e => {
+      stepState.keywords = e.target.value;
+      stepState.triedCreate = false;
+      saveStepState();
+      updatePromptPreview();
+    });
+  }
+}
+
+// ===== STEP RENDERERS =====
+function renderIntro(step, idx) {
+  return renderQuiz(step.quiz, idx);
+}
+
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach(ex => {
+    html += `
+      <div class="compare-card">
+        <div class="compare-header ${ex.labelClass}">${ex.label}</div>
+        <div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div>
+        <div class="compare-result">${escHtml(ex.response)}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  html += `
+    <div class="discovery-box">
+      <div class="discovery-title">🔍 気づいたこと</div>
+      <div class="discovery-items">
+        <div class="discovery-item">①は「どこにでもある詩」。情報がないから誰のことでもない詩になった。</div>
+        <div class="discovery-item">②はテーマと気分を伝えたら、北九州らしさが出てきた！場所と感情を伝えるだけでこんなに変わるんだ。</div>
+        <div class="discovery-item">③は使いたい言葉を全部指定したら「ていたん・焼きうどん・門司港」がちゃんと入って、完全に北九州の詩になった！</div>
+      </div>
+    </div>
+  `;
+  return html;
+}
+
+function renderCreate(step, idx) {
+  const genre = stepState.selectedGenre;
+  const mood  = stepState.selectedMood;
+  const kw    = stepState.keywords || '';
+
+  let html = `
+    <div class="poem-builder">
+      <div class="poem-builder-header">🎨 じぶんの詩を設計しよう</div>
+
+      <div class="poem-section">
+        <div class="poem-section-label">① テーマ（詩の主役）を選んでね</div>
+        <div class="genre-chips">
+          ${GENRES.map(g => `
+            <span class="genre-chip ${genre && genre.base === g.base ? 'active' : ''}"
+              onclick="selectGenre('${escHtml(g.base)}','${escHtml(g.label)}')">${g.label}</span>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="poem-section">
+        <div class="poem-section-label">② 気分・雰囲気を選んでね</div>
+        <div class="mood-chips">
+          ${MOODS.map(m => `
+            <span class="mood-chip ${mood && mood.base === m.base ? 'active' : ''}"
+              onclick="selectMood('${escHtml(m.base)}','${escHtml(m.label)}')">${m.label}</span>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="poem-section">
+        <div class="poem-section-label">③ 絶対に使いたい言葉を書いてね（なくてもOK）<br>
+          <span style="font-weight:400;font-size:11px;color:var(--ink-soft)">例：「門司港」「焼きうどん」「ていたん」など、カンマ区切りでも</span>
+        </div>
+        <input class="keyword-input" id="keyword-input" type="text"
+          placeholder="例：ていたん、夕日、海" maxlength="60">
+      </div>
+
+      <div class="poem-section">
+        <div class="poem-section-label">🧾 作られるプロンプト（確認しよう）</div>
+        <div class="prompt-preview" id="prompt-preview">${escHtml(buildPrompt())}</div>
+      </div>
+    </div>
+  `;
+
+  const canCreate = !!genre && !!mood;
+  html += `
+    <button class="btn-create" onclick="openClaudeWithPoem()" ${canCreate ? '' : 'disabled'}>
+      ${canCreate ? '✨ このプロンプトでClaudeに詩を作ってもらう' : '👆 テーマと気分を選んでね'}
+    </button>
+  `;
+
+  if (stepState.triedCreate) {
+    html += `
+      <div class="launcher-done" style="text-align:center;margin-bottom:12px">
+        ✅ Claudeで詩を作ったね！気に入った詩ができたかな？<br>
+        <span style="font-size:12px;color:var(--ink-soft)">「もっと短く」「別のバージョンも」と追加で注文してみよう！</span>
+      </div>
+    `;
+  }
+
+  return html;
+}
+
+function buildPrompt() {
+  const genre = stepState.selectedGenre;
+  const mood  = stepState.selectedMood;
+  const kw    = (stepState.keywords || '').trim();
+
+  if (!genre && !mood) return '← テーマと気分を選ぶとここにプロンプトが表示されるよ！';
+
+  let prompt = '';
+  if (genre) prompt += genre.base + 'をテーマに';
+  if (mood)  prompt += '、' + mood.base + '雰囲気の詩を書いてください。';
+  else       prompt += '詩を書いてください。';
+
+  if (kw) prompt += '\n必ず「' + kw + '」という言葉を使い、';
+  else    prompt += '\n';
+
+  prompt += '小学生でも読みやすい言葉で、5〜8行の詩にしてください。';
+
+  return prompt;
+}
+
+function updatePromptPreview() {
+  const preview = document.getElementById('prompt-preview');
+  if (preview) preview.textContent = buildPrompt();
+}
+
+function renderSummaryStep(step, idx) {
+  let html = `
+    <div class="discovery-box">
+      <div class="discovery-title">💡 AIと共作する3つのコツ</div>
+      <div class="discovery-items">
+        ${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step, idx) {
+  let html = `
+    <div class="challenge-box">
+      <div class="challenge-title">⭐ チャレンジミッション</div>
+      <div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div>
+    </div>
+  `;
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px">
+          <span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span>
+        </div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div>
+      <div class="quiz-options">
+  `;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) {
+      if (oi === quiz.answer) cls += ' correct';
+      else if (oi === answered) cls += ' wrong';
+    }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) {
+    const ok = answered === quiz.answer;
+    html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx];
+  const isLast = idx === STEPS.length - 1;
+  const isCompleted = stepState.completedSteps.includes(idx);
+
+  const needQuiz   = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needGenre  = step.type === 'create' && !stepState.selectedGenre;
+  const needMood   = step.type === 'create' && !stepState.selectedMood;
+  const needCreate = step.type === 'create' && !stepState.triedCreate;
+  const blocked = needQuiz || needGenre || needMood || needCreate;
+
+  const hint = needGenre  ? '👆 まずテーマを選んでね！'
+             : needMood   ? '👆 次に気分を選んでね！'
+             : needCreate ? '✨ まずClaudeに詩を作ってもらおう！'
+             : needQuiz   ? '❓ クイズに答えてから進もう！'
+             : isLast     ? '🏆 授業を完了する！'
+             : '次のステップへ ➡️';
+
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  const color  = isLast ? 'var(--coral)' : 'var(--mint)';
+
+  if (isCompleted && !isLast) {
+    return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  }
+  if (isCompleted && isLast) return '';
+
+  return `<button class="btn-next" style="${isLast ? 'background:' + color : ''}"
+    id="btn-next-${idx}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `
+    <div class="complete-card">
+      <span class="complete-emoji">🎉</span>
+      <div class="complete-title">第5回クリア！</div>
+      <div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>AIと詩を共作できたね。</div>
+      <div class="stars">
+        <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+      </div>
+      <div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">
+        「アイデアは自分・形にするのはAI」の共作スタイルを覚えておこう！<br>
+        次回は「クイズ・なぞなぞを作る」に挑戦するよ！
+      </div>
+      <a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">
+        🏠 トップにもどる
+      </a>
+    </div>
+  `;
+}
+
+// ===== ACTIONS =====
+function nextStep(idx) {
+  const isNew = !stepState.completedSteps.includes(idx);
+  if (isNew) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState();
+  renderApp();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState();
+  renderApp();
+  showToast('🎉 第5回完了！');
+  setTimeout(() => awardBadgePopup(), 800);
+}
+
+function answerQuiz(stepIdx, optIdx) {
+  stepState.quizAnswered[stepIdx] = optIdx;
+  saveStepState();
+  renderStep(stepIdx);
+}
+
+function selectGenre(base, label) {
+  stepState.selectedGenre = { base, label };
+  stepState.triedCreate = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function selectMood(base, label) {
+  stepState.selectedMood = { base, label };
+  stepState.triedCreate = false;
+  saveStepState();
+  renderStep(stepState.currentStep);
+}
+
+function openClaudeWithPoem() {
+  const prompt = buildPrompt();
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  stepState.triedCreate = true;
+  saveStepState();
+  showToast('🚀 Claudeが開いたよ！プロンプトをコピーして貼り付けてみよう！');
+  renderStep(stepState.currentStep);
+}
+
+function openClaude() {
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeを開いたよ！');
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

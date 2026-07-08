@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第9回：自由制作① | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .genre-card { background: var(--white); border: 2px solid #E0E4F0; border-radius: 14px; padding: 12px; cursor: pointer; transition: all 0.15s; }
+  .genre-card:hover { border-color: var(--amber); }
+  .genre-card.active { border-color: var(--amber); background: var(--amber-light); }
+  .genre-icon { font-size: 24px; margin-bottom: 4px; }
+  .genre-label { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .genre-ex { font-size: 11px; color: var(--ink-soft); line-height: 1.4; }
+
+  .plan-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .plan-header { background: var(--amber); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .builder-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .builder-section:last-child { border-bottom: none; }
+  .builder-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .theme-input { width: 100%; box-sizing: border-box; border: 1.5px solid #E0E4F0; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; color: var(--ink); background: var(--bg); outline: none; }
+  .theme-input:focus { border-color: var(--amber); }
+  .prompt-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; min-height: 60px; margin-top: 8px; white-space: pre-wrap; }
+  .btn-build { width: calc(100% - 32px); margin: 12px 16px; padding: 14px; background: var(--amber); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-build:hover { background: #c68000; }
+  .btn-build:disabled { background: #ccc; cursor: not-allowed; }
+
+  .example-works { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .work-card { background: var(--white); border-radius: 12px; padding: 10px 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); display: flex; align-items: flex-start; gap: 10px; }
+  .work-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .work-content { flex: 1; }
+  .work-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .work-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第9回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>気づく</span><span>作品例</span><span>計画</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 9;
+
+const GENRES = [
+  { key: 'story', icon: '📖', label: '物語・表現系', ex: '自己紹介・地域の歴史物語・詩集' },
+  { key: 'research', icon: '🔬', label: '調査・分析系', ex: '地域調査レポート・データまとめ' },
+  { key: 'tool', icon: '🛠️', label: 'ツール・道具系', ex: '計算アプリ・地元情報まとめ' },
+  { key: 'game', icon: '🎮', label: 'ゲーム・クイズ系', ex: 'クイズゲーム・なぞなぞブック' },
+  { key: 'record', icon: '📓', label: '観察・記録系', ex: '観察日記・自由研究・まとめ本' },
+  { key: 'design', icon: '🎨', label: 'デザイン・クリエイティブ系', ex: 'ポスター・ゆるキャラ・ロゴ提案' },
+  { key: 'social', icon: '🌍', label: '社会課題解決系', ex: '地域の困りごとを解決する提案' },
+];
+
+const WORK_EXAMPLES = [
+  { icon: '📖', title: '門司港の歴史を語る物語', desc: '石炭貿易で栄えた門司港。当時の少年が主人公の短編物語を書いた。AIにキャラクターとセリフを考えてもらい、感動的な場面は自分で書いた！' },
+  { icon: '🔬', title: '北九州7区比較調査レポート', desc: 'AIに各区の特徴を調べてもらい、「一番住みやすい区はどこか？」を自分で考えて発表した。AIの情報を別で確認したら1つ間違いを見つけた！' },
+  { icon: '🎮', title: '北九州ご当地クイズゲーム', desc: '全30問！友達にどんどん出せるクイズを作り、学校で流行した。難易度は「易しい・ふつう・難しい」の3段階。AIのおかげで問題量が一気に増やせた。' },
+  { icon: '🎨', title: '若松区の新しいポスター', desc: 'AIに「若松区の一番の自慢を教えて」と聞いて、そこからキャッチコピーを考えた。手書きのイラスト＋AIで考えたコピー＝世界に一枚のポスター！' },
+];
+
+const STEPS = [
+  {
+    icon: '🎨',
+    iconBg: '#FFF3E0',
+    tag: 'STEP 1',
+    tagColor: '#FFF3E0',
+    tagText: '#b87d00',
+    title: 'いよいよ自由制作！テーマを自分で決めよう',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">第5〜8回で、詩・クイズ・調査・発表資料をAIと作ってきたね。<br>
+      今日からは<strong>「自由制作」</strong>！自分の好きなテーマを選んで、AIと一緒にオリジナル作品を作るよ。</p>
+      <p class="lesson-text">大事なのは<strong>「まず何を作るか決める」</strong>こと。<br>
+      テーマが決まれば、あとはAIが力強いパートナーになってくれる。</p>
+      <div class="info-box">
+        <b>🎨 作品のジャンルは7種類：</b><br>
+        物語・調査・ツール・ゲーム・観察記録・デザイン・社会課題解決<br>
+        どのジャンルを選んでも「自分らしさ」が一番大切！
+      </div>
+    `,
+    quiz: {
+      question: '自由制作で一番最初にすることはどれ？',
+      options: ['まずAIに「何か作って」と頼む', '「何を作るか」を自分で決めてからAIに相談する', 'テーマが決まるまでAIは使わない', '先生が決めたテーマで作る'],
+      answer: 1,
+      ok: '🎉 正解！テーマを自分で決めることで「作品への愛着」が生まれる。AIは決めたテーマを形にするパートナー！',
+      ng: '🤔 惜しい！「まず何を作るか決める」が最初のステップ。AIに丸投げすると「誰のための作品かわからない」ものになっちゃうよ。'
+    }
+  },
+  {
+    icon: '💡',
+    iconBg: '#FFF3E0',
+    tag: 'STEP 2',
+    tagColor: '#FFF3E0',
+    tagText: '#b87d00',
+    title: '先輩たちの作品を見てみよう',
+    type: 'examples',
+    content: `<p class="lesson-text">どんな作品が作れるか、具体的なイメージをつかもう！</p>`
+  },
+  {
+    icon: '📋',
+    iconBg: '#FFF3E0',
+    tag: 'STEP 3',
+    tagColor: '#FFF3E0',
+    tagText: '#b87d00',
+    title: '自分のプロジェクト計画を立てよう！',
+    type: 'create',
+    content: `<p class="lesson-text">ジャンルを選んでテーマを入力すると、<br>Claudeに「制作のアドバイス」を聞くプロンプトが作られるよ！</p>`
+  },
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：自由制作のスタート3原則',
+    type: 'summary',
+    content: `<p class="lesson-text">プロジェクト計画を立ててみてどうだった？まとめよう！</p>`,
+    discoveries: [
+      { text: '<b>「誰に見せたいか」を決める：</b>友達・家族・地域の人など、相手を決めると作品の方向がはっきりする' },
+      { text: '<b>「小さく始める」：</b>全部一気に作ろうとしない。まず一番作りたい部分から始めよう' },
+      { text: '<b>AIを「壁打ち相手」にする：</b>迷ったらAIに「どう思う？」「他のアイデアは？」と聞いてみよう' },
+    ],
+    quiz: {
+      question: '自由制作を進めるとき、막혀서 進めなくなったときの一番の解決策はどれ？',
+      options: ['あきらめる', '先生に全部決めてもらう', 'AIに「ここで詰まっています。アドバイスして」と相談する', '同じプロンプトを何回も送る'],
+      answer: 2,
+      ok: '🌟 正解！AIは「壁打ち相手」として最強。詰まったらどんどん相談しよう！',
+      ng: '🤔 惜しい！詰まったらAIに「ここで困っています」と正直に話しかけよう。AIはいつでも一緒に考えてくれるよ。'
+    }
+  },
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：作品をどんどん深めよう',
+    type: 'challenge',
+    content: `<p class="lesson-text">計画を立てたら、次回の発表までに少しずつ進めよう！</p>`,
+    challenges: [
+      { level: '★', title: '「1ページ目」を完成させよう', desc: 'どんな作品でも「最初の1ページ（最初の1問・最初のシーン）」を完成させよう。小さくても形になったものがあると、次への意欲が湧いてくる！', hint: '例：物語なら書き出しの1段落、クイズなら最初の5問、調査なら「はじめに」の1パラグラフから始めよう。' },
+      { level: '★★', title: '「中間発表」してみよう', desc: '完成していなくても今の状態を友達か家族に見せて「どうかな？」と聞いてみよう。もらった感想をAIに話して「どう改善する？」を考えよう。', hint: '「友達にこんな感想をもらいました。作品をもっとよくするにはどうすればいい？」とAIに聞いてみよう。' },
+      { level: '★★★', title: '（中学生向け）「ユーザーテスト」を設計しよう', desc: '作品を誰かに見せる前に「どんな反応が来そうか」「どこで詰まりそうか」を先に予測しよう。予測をAIと立て、実際と比べてみよう。', hint: 'キーワード：ユーザーテスト、ペルソナ、フィードバックの分類。「誰が読んでも理解できるか」を確認する方法をAIと考えよう。' }
+    ]
+  }
+];
+
+let stepState = { currentStep: 0, completedSteps: [], quizAnswered: {}, selectedGenre: null, themeText: '', triedCreate: false };
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson9-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+function saveStepState() {
+  localStorage.setItem('lesson9-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+function goToStep(i) { const max = Math.max(...stepState.completedSteps, 0); if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro') html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'examples') html += renderExamples();
+  else if (step.type === 'create') html += renderCreate(step, idx);
+  else if (step.type === 'summary') html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+  if (step.type === 'create') {
+    const inp = document.getElementById('theme-input');
+    if (inp) {
+      inp.value = stepState.themeText || '';
+      inp.addEventListener('input', function() { stepState.themeText = this.value; stepState.triedCreate = false; saveStepState(); document.getElementById('prompt-prev').textContent = buildPrompt(); document.getElementById('build-btn').disabled = !canCreate(); });
+    }
+  }
+}
+function renderExamples() {
+  let html = '<div class="example-works">';
+  WORK_EXAMPLES.forEach(w => { html += `<div class="work-card"><div class="work-icon">${w.icon}</div><div class="work-content"><div class="work-title">${escHtml(w.title)}</div><div class="work-desc">${escHtml(w.desc)}</div></div></div>`; });
+  html += '</div>';
+  html += `<div class="discovery-box"><div class="discovery-title">💡 どんな作品でも共通していること</div><div class="discovery-items"><div class="discovery-item">「何のために作るか（誰に見せるか）」がはっきりしている</div><div class="discovery-item">AIに任せる部分と「自分でやる部分」が分かれている</div><div class="discovery-item">完成した時の「自分への誇り感」がモチベーションになっている</div></div></div>`;
+  return html;
+}
+function buildPrompt() {
+  const g = stepState.selectedGenre, th = stepState.themeText;
+  if (!g) return '← ジャンルを選ぶとプロンプトが表示されるよ！';
+  if (!th) return '← テーマを入力するとプロンプトが完成するよ！';
+  const genreObj = GENRES.find(x => x.key === g);
+  return '私は「' + (genreObj ? genreObj.label : '') + '」ジャンルで、「' + th + '」というテーマで作品を作ろうとしています。\n\n次の3点をアドバイスしてください：\n①作品の構成（どんな内容を何段階で作るか）\n②AIに頼む部分と自分でやる部分の分け方\n③まず最初にやるべきこと（小さな一歩）\n\n小学5年生でもわかりやすい言葉でお願いします。';
+}
+function canCreate() { return !!(stepState.selectedGenre && stepState.themeText && stepState.themeText.trim()); }
+function renderCreate(step, idx) {
+  const g = stepState.selectedGenre;
+  let html = `<div class="genre-grid">${GENRES.map(x => `<div class="genre-card ${g === x.key ? 'active' : ''}" onclick="selGenre('${x.key}')"><div class="genre-icon">${x.icon}</div><div class="genre-label">${escHtml(x.label)}</div><div class="genre-ex">例：${escHtml(x.ex)}</div></div>`).join('')}</div>`;
+  html += `<div class="plan-builder"><div class="plan-header">📋 プロジェクト計画を立てよう</div>
+    <div class="builder-section"><div class="builder-label">② 作品のテーマ（できるだけ具体的に！）</div><input id="theme-input" class="theme-input" type="text" placeholder="例：門司港の歴史を伝える物語、北九州クイズ大会用のクイズなど" /></div>
+    <div class="builder-section"><div class="builder-label">🧾 作られるプロンプト</div><div class="prompt-preview" id="prompt-prev">${escHtml(buildPrompt())}</div></div>
+  </div>`;
+  html += `<button class="btn-build" id="build-btn" onclick="openClaudeWithPlan()" ${canCreate() ? '' : 'disabled'}>${canCreate() ? '🚀 このプロンプトでClaudeに相談する' : '👆 ジャンルを選んでテーマを入力しよう'}</button>`;
+  if (stepState.triedCreate) html += `<div class="launcher-done" style="text-align:center;margin-bottom:12px">✅ Claudeに相談したね！もらったアドバイスを次回に活かそう！</div>`;
+  return html;
+}
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">💡 自由制作のスタート3原則</div><div class="discovery-items">${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+function renderChallenge(step, idx) {
+  let html = `<div style="border:2px dashed var(--purple);border-radius:14px;padding:14px 16px;background:var(--purple-light);margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--purple);margin-bottom:6px">⭐ チャレンジミッション</div><div style="font-size:13px;color:var(--ink-mid)">次回（第10回）の発表に向けて少しずつ進めよう！</div></div>`;
+  step.challenges.forEach(c => { html += `<div class="mission-box" style="margin-bottom:10px"><div class="mission-title">${c.level} ${escHtml(c.title)}</div><div class="mission-text">${escHtml(c.desc)}</div><div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div><div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div></div>`; });
+  return html;
+}
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needGenre = step.type === 'create' && !stepState.selectedGenre;
+  const needTheme = step.type === 'create' && !stepState.themeText.trim();
+  const needTry   = step.type === 'create' && !stepState.triedCreate;
+  const blocked = needQuiz || needGenre || needTheme || needTry;
+  const hint = needGenre ? '👆 ジャンルを選んでね！' : needTheme ? '✏️ テーマを入力してね！' : needTry ? '🚀 まずClaudeに相談しよう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 授業を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral)' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🎉</span><div class="complete-title">第9回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>プロジェクト計画が立てられたね。</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">次回（第10回）は作品を完成させて発表するよ。<br>今回決めたテーマで少しずつ作り進めよう！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+function nextStep(idx) { if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); stepState.currentStep = idx + 1; saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('✅ ステップ ' + (idx + 1) + ' クリア！'); }
+function completeLesson() { const idx = STEPS.length - 1; if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); state.lessonCompleted = state.lessonCompleted || {}; state.lessonCompleted[LESSON_ID] = true; saveStepState(); renderApp(); showToast('🎉 第9回完了！'); setTimeout(() => awardBadgePopup(), 800); }
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+function selGenre(key) { stepState.selectedGenre = key; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function openClaudeWithPlan() { const prompt = buildPrompt(); navigator.clipboard.writeText(prompt).catch(() => {}); window.open('https://claude.ai/new', '_blank'); stepState.triedCreate = true; saveStepState(); showToast('🚀 Claudeが開いたよ！プロンプトをコピーして貼り付けよう！'); renderStep(stepState.currentStep); }
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第10回：自由制作②・発表 | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .finish-step { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 14px; }
+  .finish-step-header { padding: 10px 14px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .finish-step-body { padding: 10px 14px 14px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+  .finish-step-body b { color: var(--ink); }
+
+  .polish-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .polish-header { background: var(--coral); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .builder-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .builder-section:last-child { border-bottom: none; }
+  .builder-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sel-chip { background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .sel-chip:hover, .sel-chip.active { background: var(--coral); color: white; border-color: var(--coral); }
+  .prompt-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; min-height: 60px; margin-top: 8px; white-space: pre-wrap; }
+  .btn-build { width: calc(100% - 32px); margin: 12px 16px; padding: 14px; background: var(--coral); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-build:hover { background: #c0392b; }
+  .btn-build:disabled { background: #ccc; cursor: not-allowed; }
+
+  .present-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 12px; }
+  .present-num { display: inline-block; background: var(--coral); color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+  .present-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .present-text { font-size: 13px; color: var(--ink-mid); line-height: 1.6; }
+
+  .reflect-box { background: var(--white); border: 2px solid #E0E4F0; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .reflect-q { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
+  .reflect-a { font-size: 13px; color: var(--ink-mid); line-height: 1.6; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+
+  .block2-complete { background: linear-gradient(135deg, #2563a8 0%, #34C88A 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 16px; }
+  .bc-badge { font-size: 48px; margin-bottom: 8px; }
+  .bc-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; letter-spacing: 0.02em; }
+  .bc-sub { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第10回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>仕上げ</span><span>磨く</span><span>発表</span><span>振り返り</span><span>ゴール🏆</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 10;
+
+const IMPROVE_TYPES = [
+  { label: '✍️ 文章を読みやすく', base: '文章の読みやすさ・わかりやすさ' },
+  { label: '❓ 面白さを増やす', base: '作品の面白さ・引きつける工夫' },
+  { label: '🔍 抜け漏れ確認', base: '内容の抜け漏れや不自然な点' },
+  { label: '💬 発表の言い方', base: '発表時の話し方・言葉遣い' },
+];
+
+const STEPS = [
+  {
+    icon: '🏁',
+    iconBg: '#FDECEA',
+    tag: 'STEP 1',
+    tagColor: '#FDECEA',
+    tagText: '#c0392b',
+    title: '作品を仕上げる「最後のひと押し」',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">今日は<strong>作品を完成させて、みんなに発表する</strong>日だよ！<br>
+      前回（第9回）で立てた計画を持ち寄って、今日ここで仕上げよう。</p>
+      <p class="lesson-text">「完璧でなくていい」。大切なのは<strong>「今の自分にできる最高を見せること」</strong>だよ。</p>
+      <div class="finish-step"><div class="finish-step-header" style="background:#FDECEA;color:#c0392b">① まず今の状態を確認しよう</div><div class="finish-step-body">前回作り始めた作品はどこまで進んだ？<br>・<b>完成している部分</b>はどこ？<br>・<b>あと少しの部分</b>はどこ？<br>・今日中にできそうな修正は何？</div></div>
+      <div class="finish-step"><div class="finish-step-header" style="background:#EBF4FF;color:#2563a8">② 「ここだけ完成」作戦</div><div class="finish-step-body">全部完成しなくても大丈夫！<br>「この部分だけは完璧にする」という<b>一番見せたい場所</b>を1つ決めよう。<br>そこを今日仕上げることに集中しよう。</div></div>
+      <div class="info-box"><b>🏆 今日のゴール：</b><br>「今の自分にできる最高の状態」で発表できること。<br>完成度より「自分の言葉で話せること」が大事！</div>
+    `,
+    quiz: {
+      question: '発表で一番大切なのはどれ？',
+      options: ['完璧な作品を作ること', '自分の言葉で、何を伝えたいかを話せること', '一番長い作品を作ること', 'AIに全部作ってもらうこと'],
+      answer: 1,
+      ok: '🎉 正解！完璧でなくても「自分の言葉で伝える」ことが発表の本質。AIが作った部分より「自分が選んで・考えた」部分を話そう！',
+      ng: '🤔 惜しい！発表は「自分の言葉で伝えること」が一番。完璧な作品より、「なぜこれを作ったか」「何が大変だったか」を話せることが大切だよ。'
+    }
+  },
+  {
+    icon: '✨',
+    iconBg: '#FDECEA',
+    tag: 'STEP 2',
+    tagColor: '#FDECEA',
+    tagText: '#c0392b',
+    title: 'AIで作品を「最後に磨く」',
+    type: 'polish',
+    content: `<p class="lesson-text">完成直前の作品、AIに最終チェックをお願いしよう！<br>どこを磨きたいか選ぶとプロンプトが作られるよ。</p>`
+  },
+  {
+    icon: '🎤',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: '発表の3つの鉄則',
+    type: 'present',
+    content: `<p class="lesson-text">発表前に3つの鉄則を確認しよう！</p>`
+  },
+  {
+    icon: '🔮',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '振り返り：Block②で何が変わった？',
+    type: 'reflect',
+    content: `<p class="lesson-text">第5〜10回の6回を振り返ろう！AIを使った「制作の力」がどれだけ育ったか確認しよう。</p>`,
+    reflects: [
+      { q: '😊 一番楽しかった・印象に残った回はどれ？', hint: '第5〜10回のどれでもOK。理由も思い出してみよう' },
+      { q: '💪 自分で「うまくできた！」と思うプロンプトはあった？', hint: '指示が詳しくなったとき、AIの答えが変わった瞬間を思い出して' },
+      { q: '🤔 AIに頼んでもうまくいかなかった（または驚いた）ことは？', hint: 'それはAIの苦手なことかも？どんな指示なら改善できるか考えよう' },
+    ]
+  },
+  {
+    icon: '🏆',
+    iconBg: '#FFF3E0',
+    tag: 'STEP 5　ゴール！',
+    tagColor: '#FFF3E0',
+    tagText: '#b87d00',
+    title: 'Block②完走おめでとう！じーもバッジゲット！',
+    type: 'goal',
+    content: ``
+  }
+];
+
+let stepState = { currentStep: 0, completedSteps: [], quizAnswered: {}, selectedImprove: null, triedPolish: false, reflectDone: false };
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson10-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+function saveStepState() {
+  localStorage.setItem('lesson10-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+function goToStep(i) { const max = Math.max(...stepState.completedSteps, 0); if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro') html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'polish') html += renderPolish(step, idx);
+  else if (step.type === 'present') html += renderPresent(step, idx);
+  else if (step.type === 'reflect') html += renderReflect(step, idx);
+  else if (step.type === 'goal') html += renderGoal();
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+function buildPolishPrompt() {
+  const im = stepState.selectedImprove;
+  if (!im) return '← 磨きたい観点を選ぶとプロンプトが表示されるよ！';
+  return '私が作った作品をレビューしてほしいです。\n特に「' + im.base + '」の観点から見て、改善できるポイントを3つ教えてください。\n\n改善のポイントごとに：\n①問題点（何がよくないか）\n②改善案（どうすればよくなるか）\n③改善例（具体的な例を1つ）\nを書いてください。小学生でもわかりやすい言葉でお願いします。\n\n（ここに作品の内容を貼り付けてください）';
+}
+function renderPolish(step, idx) {
+  const im = stepState.selectedImprove;
+  let html = `<div class="polish-builder"><div class="polish-header">✨ 磨きたい観点を選ぼう</div>
+    <div class="builder-section"><div class="builder-label">どこを磨きたい？</div><div class="chip-row">${IMPROVE_TYPES.map(x => `<span class="sel-chip ${im && im.base === x.base ? 'active' : ''}" onclick="selImprove('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">🧾 作られるプロンプト</div><div class="prompt-preview">${escHtml(buildPolishPrompt())}</div></div>
+  </div>`;
+  html += `<button class="btn-build" onclick="openClaudePolish()" ${im ? '' : 'disabled'}>${im ? '✨ このプロンプトでClaudeに最終チェックをお願いする' : '👆 磨きたい観点を選んでね'}</button>`;
+  if (stepState.triedPolish) html += `<div class="launcher-done" style="text-align:center;margin-bottom:12px">✅ Claudeにチェックしてもらったね！アドバイスを反映して完成に近づけよう。</div>`;
+  return html;
+}
+function renderPresent(step, idx) {
+  const cards = [
+    { num: '鉄則①', title: '「なぜこれを作ったか」から始める', text: '最初の10秒で「このテーマを選んだ理由」を話す。これだけで聴き手が前のめりになる。例：「ぼくは門司港が大好きだから、その歴史を伝えたくて作りました」' },
+    { num: '鉄則②', title: '「AIに頼んだこと」と「自分でやったこと」を分けて話す', text: '「〇〇の構成はAIに考えてもらいました。でも、中身の文章は全部自分で書きました」と言うだけで「ちゃんと自分で作った」ことが伝わる。AIを使ったことは隠さなくていい！' },
+    { num: '鉄則③', title: '「難しかった・驚いたこと」を1つ話す', text: '「最初AIに〇〇を頼んだらうまくいかなくて、指示を変えたらできました」みたいなエピソードがあると、発表がぐっとリアルになる。完璧な結果より学びのプロセスが面白い！' },
+  ];
+  let html = '';
+  cards.forEach(c => { html += `<div class="present-card"><div class="present-num">${c.num}</div><div class="present-title">${c.title}</div><div class="present-text">${c.text}</div></div>`; });
+  html += `<div class="hint-chips" style="margin-bottom:16px"><span class="hint-chip" onclick="openClaude()">🚀 発表練習をClaudeにお願いする</span></div>`;
+  return html;
+}
+function renderReflect(step, idx) {
+  let html = `<div class="block2-complete"><div class="bc-badge">🎓</div><div class="bc-title">Block② 6回分の成長を振り返ろう</div><div class="bc-sub">詩・クイズ・調査・発表・自由制作<br>6つの「作る」力を身につけた！</div></div>`;
+  step.reflects.forEach((r, ri) => {
+    html += `<div class="reflect-box"><div class="reflect-q">🤔 ${escHtml(r.q)}</div><div class="reflect-a" style="color:var(--ink-soft);font-style:italic">${escHtml(r.hint)}</div></div>`;
+  });
+  html += `<div class="discovery-box"><div class="discovery-title">💡 Block②で身についたこと</div><div class="discovery-items">
+    <div class="discovery-item">「テーマを決めて」「AIを使って」「自分で仕上げる」という制作の流れが身についた</div>
+    <div class="discovery-item">目的・相手・条件を伝えるほど、AIの答えが使えるものになると実感できた</div>
+    <div class="discovery-item">AIは「全部やってくれる機械」ではなく「一緒に作るパートナー」だとわかった</div>
+  </div></div>`;
+  const done = stepState.reflectDone;
+  if (!done) html += `<button class="btn-next" onclick="doneReflect()" style="margin-bottom:0">✅ 振り返り完了！</button>`;
+  return html;
+}
+function renderGoal() {
+  return `<div class="block2-complete"><div class="bc-badge">🎉</div><div class="bc-title">Block②コンプリート！</div><div class="bc-sub">第5〜10回、全部やり切ったね！<br>「じーも」バッジを受け取ろう！</div></div>
+  <div style="background:var(--white);border-radius:14px;box-shadow:var(--shadow-card);padding:16px;margin-bottom:16px;text-align:center">
+    <div style="font-size:40px;margin-bottom:6px">🐥</div>
+    <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">じーもバッジ</div>
+    <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">北九州のゆるキャラ「じーも」。<br>Block②をコンプリートした証！<br>AIで「作る力」を身につけたしるし。</div>
+  </div>
+  <div style="background:var(--sky-light);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:700;color:var(--sky-dark);margin-bottom:8px">🚀 次のBlock③では…</div>
+    <div style="font-size:13px;color:var(--ink-mid);line-height:1.7">・<b>AIはウソをつく？</b>ハルシネーションを体験して確かめる<br>・<b>著作権・倫理</b>：AIの答えを使うときのルールを学ぶ<br>・<b>地域課題</b>：北九州の問題をAIと一緒に考える<br>もっと深くAIを理解する6回が待ってるよ！</div>
+  </div>`;
+}
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz   = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needImprove = step.type === 'polish' && !stepState.selectedImprove;
+  const needPolish  = step.type === 'polish' && !stepState.triedPolish;
+  const needReflect = step.type === 'reflect' && !stepState.reflectDone;
+  const blocked = needQuiz || needImprove || needPolish || needReflect;
+  const hint = needImprove ? '👆 磨きたい観点を選んでね！' : needPolish ? '✨ まずClaudeに最終チェックをお願いしよう！' : needReflect ? '🔮 上の「振り返り完了」ボタンを押してね！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 第10回・Block②を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--amber);' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🏆</span><div class="complete-title">Block②クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、すごい！<br>「AIと作る力」がしっかり身についたね。</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">第11〜14回（Block③）では、AIをもっと深く理解するよ。<br>ハルシネーション・著作権・地域課題に挑戦しよう！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+function nextStep(idx) { if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); stepState.currentStep = idx + 1; saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('✅ ステップ ' + (idx + 1) + ' クリア！'); }
+function completeLesson() { const idx = STEPS.length - 1; if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); state.lessonCompleted = state.lessonCompleted || {}; state.lessonCompleted[LESSON_ID] = true; saveStepState(); renderApp(); showToast('🎉 第10回完了！Block②コンプリート！'); setTimeout(() => awardBadgePopup(), 800); }
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+function selImprove(base, label) { stepState.selectedImprove = { base, label }; stepState.triedPolish = false; saveStepState(); renderStep(stepState.currentStep); }
+function doneReflect() { stepState.reflectDone = true; saveStepState(); renderStep(stepState.currentStep); showToast('🔮 振り返り完了！'); }
+function openClaudePolish() { const prompt = buildPolishPrompt(); navigator.clipboard.writeText(prompt).catch(() => {}); window.open('https://claude.ai/new', '_blank'); stepState.triedPolish = true; saveStepState(); showToast('🚀 Claudeが開いたよ！プロンプトをコピーして作品も貼り付けよう！'); renderStep(stepState.currentStep); }
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+init();
+</script>
+</body>
+</html>

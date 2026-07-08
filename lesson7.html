@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第7回：北九州を調べよう | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .compare-wrap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .compare-card { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); }
+  .compare-header { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .compare-prompt { background: var(--white); padding: 12px 16px; font-size: 14px; color: var(--ink-mid); border-bottom: 1px solid #F0F2FA; line-height: 1.6; }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result { background: #FAFBFF; padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; min-height: 56px; white-space: pre-wrap; }
+  .v-basic { background: #F1EFE8; color: #5F5E5A; }
+  .v-good  { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great { background: var(--mint-light); color: #1a7a4a; }
+
+  .research-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .research-header { background: var(--mint); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .builder-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .builder-section:last-child { border-bottom: none; }
+  .builder-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sel-chip { background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .sel-chip:hover, .sel-chip.active { background: var(--mint); color: white; border-color: var(--mint); }
+  .prompt-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; min-height: 60px; margin-top: 8px; white-space: pre-wrap; }
+  .btn-build { width: calc(100% - 32px); margin: 12px 16px; padding: 14px; background: var(--mint); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-build:hover { background: #219653; }
+  .btn-build:disabled { background: #ccc; cursor: not-allowed; }
+
+  .warn-box { background: #FFF8F6; border: 2px solid var(--coral); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .warn-title { font-size: 13px; font-weight: 700; color: #c0392b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .warn-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 16px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第7回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>気づく</span><span>比べる</span><span>調べる</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 7;
+
+const STEPS = [
+  {
+    icon: '🏙️',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 1',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: 'AIで地元を深く知ろう！',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">今日は<strong>北九州市のことをAIと一緒に調べる</strong>ことに挑戦するよ！<br>
+      AIは北九州の歴史・文化・産業・自然についての知識を持っている。うまく使えば、教科書には載っていない深い情報も引き出せるよ。</p>
+      <p class="lesson-text">ただし重要なのは、<strong>AIが言ったことをそのまま信じない</strong>こと。<br>
+      必ず「本当かどうか」を別の方法で確認する習慣が大切！</p>
+      <div class="info-box">
+        <b>🏙️ 今日学ぶこと：</b><br>
+        調べたい区・テーマを指定してAIに調査してもらい、<br>
+        <b>「まとめ方」と「事実確認の仕方」</b>を身につけよう。
+      </div>
+    `,
+    quiz: {
+      question: 'AIで調べたことについて、正しい使い方はどれ？',
+      options: ['AIが言ったことは全部正しいのでそのまま使う', 'AIの情報を参考にしながら、必ず別の方法でも確認する', 'AIには地域のことはわからないので使わない', 'AIの答えを全部コピーして発表に使う'],
+      answer: 1,
+      ok: '🎉 正解！AIはとても便利な調査パートナーだけど、ウソをつくこともある（ハルシネーション）。必ず事実確認をしよう！',
+      ng: '🤔 惜しい！AIの情報は参考になるけど、100%正しいわけじゃないよ。「北九州市の公式サイト」「図書館の本」など別の情報源でも確認する習慣をつけよう。'
+    }
+  },
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '聞き方で調査結果がどう変わる？',
+    type: 'compare',
+    content: `<p class="lesson-text">「門司区を教えて」と「詳しく教えて」では大違い！実際に比べてみよう。</p>`,
+    examples: [
+      {
+        label: '聞き方①　シンプルに聞く',
+        labelClass: 'v-basic',
+        prompt: '門司区について教えてください。',
+        response: '門司区は北九州市の東端に位置する区です。門司港レトロが有名で、観光地として人気があります。人口は約10万人です。'
+      },
+      {
+        label: '聞き方②　テーマと使い方を伝える',
+        labelClass: 'v-good',
+        prompt: '門司区の歴史と観光の魅力について、小学5年生が調べ学習に使えるよう教えてください。有名な場所を3つ以上あげて、それぞれ「なぜ有名なのか」も教えてください。',
+        response: '門司区の歴史と観光スポットを紹介するね！\n\n① 門司港レトロ\n明治〜大正時代の洋館が立ち並ぶエリア。石炭貿易で栄えた当時の建物が今も残っており、映画のセットみたいな雰囲気がある。\n\n② 関門海峡\n本州と九州を隔てる海峡で、最も狭い場所は約700m。壇ノ浦の戦い（1185年）の舞台でもある歴史的な場所。\n\n③ 旧門司三井倶楽部\nアインシュタインが1922年に泊まった洋館。国の重要文化財に指定されている。'
+      },
+      {
+        label: '聞き方③　比較・課題・将来まで掘り下げる',
+        labelClass: 'v-great',
+        prompt: '門司区の「過去・現在・未来」を調べています。①全盛期（いつ・なぜ栄えたか）②現在の課題（人口減少など）③これからの取り組みの3点を、小学生向けにわかりやすく教えてください。',
+        response: '門司区の「過去・現在・未来」を整理するね！\n\n【過去：全盛期】明治〜昭和初期\n石炭の輸出と貿易港として大いに栄えた。特に1900〜1940年代は日本有数の国際貿易港として、バナナのたたき売りなどユニークな文化も生まれた。\n\n【現在の課題】\n・人口減少：ピーク時（1960年代）に比べ人口が半分以下に\n・高齢化率が北九州市内でも高い\n・商店街のシャッター問題\n\n【未来に向けた取り組み】\n・門司港レトロ地区の観光開発\n・「にぎわい」を作るイベント・移住促進\n・若い世代にもアピールするリノベーションまちづくり'
+      }
+    ]
+  },
+  {
+    icon: '🔬',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 3',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '北九州の気になる区を調べよう！',
+    type: 'create',
+    content: `<p class="lesson-text">調べたい区とテーマを選ぶと、調査プロンプトが作られるよ！</p>`
+  },
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：地域調査の3つのコツ',
+    type: 'summary',
+    content: `<p class="lesson-text">AIで北九州を調べてみてどうだった？まとめよう！</p>`,
+    discoveries: [
+      { text: '<b>「過去・現在・未来」で聞く：</b>歴史・今の様子・これからを3点セットで聞くと深い調査になる' },
+      { text: '<b>事実確認を忘れない：</b>AIの情報は参考程度。「北九州市公式サイト」「図書館」「地元の人」で確認しよう' },
+      { text: '<b>「なぜ？」を必ず聞く：</b>「なぜ栄えたのか」「なぜ課題になっているのか」を聞くと、表面だけでない理解が得られる' },
+    ],
+    quiz: {
+      question: 'AIで地域調査をするとき大切なのはどれ？',
+      options: ['AIが言ったことはすべて正しいので安心して使う', 'AIで大まかな情報を集めてから、別の方法で事実確認する', 'AIには地域の情報がないので使わない', 'とにかくたくさんの情報をコピーして使う'],
+      answer: 1,
+      ok: '🌟 正解！AIは調査の「スタート地点」として使うのがベスト。そこから事実確認と深堀りを自分でやろう！',
+      ng: '🤔 惜しい！AIの情報を出発点にして、別の情報源で確認するのが正しい使い方だよ。AIはウソをつくこともあるから注意。'
+    }
+  },
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：北九州をもっと深く知ろう',
+    type: 'challenge',
+    content: `<p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ！</p>`,
+    challenges: [
+      { level: '★', title: '「自分の住む区」をAIで調べよう', desc: '自分が住んでいる区の歴史・有名な場所・課題をAIで調べてみよう。知らなかったことは何だった？', hint: '例：「○○区の歴史と有名な場所を3つ、小学生向けに教えてください。それぞれなぜ有名なのかも書いてください」' },
+      { level: '★★', title: '7区を比べて「北九州マップ」を作ろう', desc: '北九州7区それぞれの「一番の自慢」をAIに聞いて、「北九州の魅力まとめ」を紙に書いてみよう。どの区も違う個性があることに気づくはず！', hint: 'ヒント：「北九州市の7区（門司・小倉北・小倉南・八幡東・八幡西・戸畑・若松）それぞれの一番の特徴を1つずつ教えて」' },
+      { level: '★★★', title: '（中学生向け）AIの情報を「ファクトチェック」しよう', desc: 'AIに北九州について5つの情報を教えてもらい、その中から1つを選んで「本当かどうか」を別の情報源（公式サイト・図書館・地元の人）で確認してみよう。', hint: 'キーワード：ファクトチェック、ハルシネーション、一次情報。AIのどんな情報が「間違いやすいか」のパターンも考えてみよう。' }
+    ]
+  }
+];
+
+const WARDS = [
+  { label: '🚢 門司区', base: '門司区' },
+  { label: '🏯 小倉北区', base: '小倉北区' },
+  { label: '🌳 小倉南区', base: '小倉南区' },
+  { label: '🏭 八幡東区', base: '八幡東区' },
+  { label: '🏪 八幡西区', base: '八幡西区' },
+  { label: '🌊 戸畑区', base: '戸畑区' },
+  { label: '⛵ 若松区', base: '若松区' },
+];
+const RESEARCH_TOPICS = [
+  { label: '📜 歴史', base: '歴史と文化' },
+  { label: '🎭 観光・名所', base: '有名な観光スポット・名所' },
+  { label: '🍜 食べ物', base: '名物料理・食文化' },
+  { label: '⚠️ 課題・未来', base: '現在の課題とこれからの取り組み' },
+  { label: '🌿 自然・環境', base: '自然・環境の特徴' },
+];
+
+let stepState = { currentStep: 0, completedSteps: [], quizAnswered: {}, selectedWard: null, selectedTopic: null, triedCreate: false };
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson7-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+function saveStepState() {
+  localStorage.setItem('lesson7-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro') html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'compare') html += renderCompare(step, idx);
+  else if (step.type === 'create') html += renderCreate(step, idx);
+  else if (step.type === 'summary') html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach(ex => { html += `<div class="compare-card"><div class="compare-header ${ex.labelClass}">${ex.label}</div><div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div><div class="compare-result">${escHtml(ex.response)}</div></div>`; });
+  html += '</div>';
+  html += `<div class="warn-box"><div class="warn-title">⚠️ 大事な注意！</div><div class="warn-text">AIの情報は参考になるけど、<strong>全部が正しいとは限らない</strong>よ。特に数字（人口・年号）は間違っていることも多い。発表に使う前に必ず確認しよう！</div></div>`;
+  html += `<div class="discovery-box"><div class="discovery-title">🔍 気づいたこと</div><div class="discovery-items"><div class="discovery-item">①はシンプルすぎて情報が少ない。調べ学習には使いにくい。</div><div class="discovery-item">②はテーマと「なぜ有名か」を聞いたら、発表に使える情報になった！</div><div class="discovery-item">③は「過去・現在・未来」という構成で聞いたら、歴史と課題が整理されて社会科の学習みたいになった！</div></div></div>`;
+  return html;
+}
+function buildPrompt() {
+  const w = stepState.selectedWard, t = stepState.selectedTopic;
+  if (!w || !t) return '← 区とテーマを選ぶとプロンプトが表示されるよ！';
+  return '北九州市' + w.base + 'の「' + t.base + '」について調べています。\n小学5年生が調べ学習に使えるように、わかりやすく教えてください。\n・有名な場所・出来事・人物があれば3つ以上あげて、それぞれ「なぜ有名か」の理由も書いてください。\n・最後に「一番の特徴」を1文でまとめてください。';
+}
+function renderCreate(step, idx) {
+  const w = stepState.selectedWard, t = stepState.selectedTopic;
+  let html = `<div class="research-builder"><div class="research-header">🔬 調査条件を決めよう</div>
+    <div class="builder-section"><div class="builder-label">① 調べたい区を選んでね</div><div class="chip-row">${WARDS.map(x => `<span class="sel-chip ${w && w.base === x.base ? 'active' : ''}" onclick="selWard('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">② 調べたいテーマを選んでね</div><div class="chip-row">${RESEARCH_TOPICS.map(x => `<span class="sel-chip ${t && t.base === x.base ? 'active' : ''}" onclick="selTopic('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">🧾 作られるプロンプト</div><div class="prompt-preview">${escHtml(buildPrompt())}</div></div>
+  </div>`;
+  const canCreate = w && t;
+  html += `<button class="btn-build" onclick="openClaudeWithResearch()" ${canCreate ? '' : 'disabled'}>${canCreate ? '🔬 このプロンプトでClaudeに調査してもらう' : '👆 区とテーマを選んでね'}</button>`;
+  if (stepState.triedCreate) html += `<div class="launcher-done" style="text-align:center;margin-bottom:12px">✅ 調査したね！AIの情報、本当かどうか確認できる？<br><span style="font-size:12px;color:var(--ink-soft)">気になる情報を先生や図書館で確認してみよう。</span></div>`;
+  return html;
+}
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">💡 地域調査の3つのコツ</div><div class="discovery-items">${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+function renderChallenge(step, idx) {
+  let html = `<div class="challenge-box"><div class="challenge-title">⭐ チャレンジミッション</div><div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div></div>`;
+  step.challenges.forEach(c => { html += `<div class="mission-box" style="margin-bottom:10px"><div class="mission-title">${c.level} ${escHtml(c.title)}</div><div class="mission-text">${escHtml(c.desc)}</div><div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div><div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div></div>`; });
+  return html;
+}
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz  = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needWard  = step.type === 'create' && !stepState.selectedWard;
+  const needTopic = step.type === 'create' && !stepState.selectedTopic;
+  const needTry   = step.type === 'create' && !stepState.triedCreate;
+  const blocked = needQuiz || needWard || needTopic || needTry;
+  const hint = needWard ? '👆 まず調べたい区を選んでね！' : needTopic ? '👆 テーマを選んでね！' : needTry ? '🔬 まずClaudeに調査してもらおう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 授業を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral)' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🎉</span><div class="complete-title">第7回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>AIで北九州を深く調べられたね。</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">「過去・現在・未来」「なぜ？」で聞くと深い調査になるよ。<br>次回は「発表資料を作ろう」だよ！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+function nextStep(idx) { if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); stepState.currentStep = idx + 1; saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); showToast('✅ ステップ ' + (idx + 1) + ' クリア！'); }
+function completeLesson() { const idx = STEPS.length - 1; if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx); state.lessonCompleted = state.lessonCompleted || {}; state.lessonCompleted[LESSON_ID] = true; saveStepState(); renderApp(); showToast('🎉 第7回完了！'); setTimeout(() => awardBadgePopup(), 800); }
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+function selWard(base, label)  { stepState.selectedWard = { base, label }; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function selTopic(base, label) { stepState.selectedTopic = { base, label }; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function openClaudeWithResearch() { const prompt = buildPrompt(); navigator.clipboard.writeText(prompt).catch(() => {}); window.open('https://claude.ai/new', '_blank'); stepState.triedCreate = true; saveStepState(); showToast('🚀 Claudeが開いたよ！プロンプトをコピーして貼り付けよう！'); renderStep(stepState.currentStep); }
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+init();
+</script>
+</body>
+</html>

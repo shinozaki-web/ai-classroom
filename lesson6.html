@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第6回：クイズ・なぞなぞを作る | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .compare-wrap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+  .compare-card { border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); }
+  .compare-header { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .compare-prompt { background: var(--white); padding: 12px 16px; font-size: 14px; color: var(--ink-mid); border-bottom: 1px solid #F0F2FA; line-height: 1.6; }
+  .compare-prompt b { color: var(--ink); }
+  .compare-result { background: #FAFBFF; padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; min-height: 56px; white-space: pre-wrap; }
+  .v-basic { background: #F1EFE8; color: #5F5E5A; }
+  .v-good  { background: var(--sky-light); color: var(--sky-dark); }
+  .v-great { background: var(--mint-light); color: #1a7a4a; }
+
+  .quiz-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .quiz-builder-header { background: var(--sky); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .builder-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .builder-section:last-child { border-bottom: none; }
+  .builder-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sel-chip {
+    background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid);
+    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .sel-chip:hover, .sel-chip.active { background: var(--sky); color: white; border-color: var(--sky); }
+  .diff-chip:hover, .diff-chip.active { background: var(--coral) !important; border-color: var(--coral) !important; }
+  .prompt-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; min-height: 60px; margin-top: 8px; white-space: pre-wrap; }
+  .btn-build { width: calc(100% - 32px); margin: 12px 16px; padding: 14px; background: var(--sky); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-build:hover { background: var(--sky-dark); }
+  .btn-build:disabled { background: #ccc; cursor: not-allowed; }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 16px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第6回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>気づく</span><span>比べる</span><span>作る</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 6;
+
+const STEPS = [
+  {
+    icon: '❓',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 1',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: 'AIはクイズ作りが得意！',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">今日は<strong>AIと一緒にクイズ・なぞなぞを作る</strong>ことに挑戦するよ！<br>
+      実はAIは、ルールを守りながらたくさんの問題を短時間で作るのがとても得意なんだ。</p>
+      <p class="lesson-text">ポイントは<strong>「誰に」「何について」「どの難しさで」「何問」</strong>作るかを、ちゃんと伝えること。<br>
+      あいまいな指示だと、使いにくいクイズができちゃうよ。</p>
+      <div class="info-box">
+        <b>❓ 今日学ぶこと：</b><br>
+        テーマ・対象・難易度・問題数を指定すると、<br>
+        <b>友達に出せる本格クイズ</b>をAIが作ってくれる！
+      </div>
+    `,
+    quiz: {
+      question: 'AIにクイズを作ってもらうとき、一番大切なのはどれ？',
+      options: ['「クイズを作って」とだけ言う', '誰向けに・何について・何問・どの難しさかを伝える', '英語でお願いする', '同じ質問を何回も送る'],
+      answer: 1,
+      ok: '🎉 正解！条件を詳しく伝えるほど、「使えるクイズ」になるよ。',
+      ng: '🤔 惜しい！「クイズを作って」だけだと、誰でも知っている簡単すぎる問題しか出てこないことが多いんだ。対象・難易度・問題数を必ず伝えよう！'
+    }
+  },
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '指示の違いでクイズがどう変わる？',
+    type: 'compare',
+    content: `<p class="lesson-text">同じ「北九州クイズを作って」でも、指示の詳しさで全然違うクイズができるよ。比べてみよう！</p>`,
+    examples: [
+      {
+        label: '指示①　シンプルに頼む',
+        labelClass: 'v-basic',
+        prompt: '北九州についてのクイズを作ってください。',
+        response: 'Q. 北九州市があるのはどの都道府県でしょう？\nA. 福岡県\n\nQ. 北九州市の人口は約何万人でしょう？\nA. 約90万人'
+      },
+      {
+        label: '指示②　対象と問題数を指定',
+        labelClass: 'v-good',
+        prompt: '小学5年生向けに、北九州の歴史についての3択クイズを3問作ってください。',
+        response: 'Q1. 北九州市で日本最初の大きな鉄工場（製鉄所）が作られたのはいつ？\n①明治時代　②江戸時代　③平成時代\n→正解：①明治時代\n\nQ2. 門司港が栄えた理由は何を輸出していたから？\n①米　②石炭　③魚\n→正解：②石炭\n\nQ3. 北九州市は今、何区ある？\n①5区　②7区　③9区\n→正解：②7区'
+      },
+      {
+        label: '指示③　難易度・ひっかけ・解説も指定',
+        labelClass: 'v-great',
+        prompt: '小学5年生向けに、北九州の食文化についての3択クイズを3問作ってください。少しひっかけを含め、各問に「なぜそうなのか」という解説も加えてください。',
+        response: 'Q1. 焼きうどんが日本で最初に生まれたのはどこ？\n①門司港　②小倉　③八幡\n→正解：②小倉\n💡解説：戦後、材料が少ない中で小倉の屋台が乾麺うどんを鉄板で焼いたのが始まり。門司港ではなく小倉なので要注意！\n\nQ2. 北九州の郷土料理「ぬかみそ炊き」の主な材料は？\n①豚肉　②青魚（サバやイワシ）　③野菜\n→正解：②青魚\n💡解説：製鉄所で働く人たちのごはんのおかずとして発展した保存食。ぬか床に魚を漬けて炊く独自の料理！\n\nQ3. 焼きカレーが有名な地区はどこ？\n①小倉北区　②若松区　③門司港\n→正解：③門司港\n💡解説：石炭貿易で賑わった門司港の洋食文化から生まれたご当地グルメ。今では門司港レトロの名物に！'
+      }
+    ]
+  },
+  {
+    icon: '🎯',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 3',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: 'じぶんのクイズを作ろう！',
+    type: 'create',
+    content: `<p class="lesson-text">テーマ・難易度・問題数を選ぶと、Claudeへのプロンプトが作られるよ！</p>`
+  },
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '今日のまとめ：クイズ作りの3つのコツ',
+    type: 'summary',
+    content: `<p class="lesson-text">AIとクイズを作ってみてどうだった？まとめよう！</p>`,
+    discoveries: [
+      { text: '<b>対象を決める：</b>「小学5年生向け」「低学年向け」など誰が解くかを伝えると難しさがちょうどよくなる' },
+      { text: '<b>形式を決める：</b>「3択」「〇×」「穴埋め」など形式を指定するとそろったクイズができる' },
+      { text: '<b>解説を頼む：</b>「なぜその答えなのかの解説も付けて」と頼むと、クイズが学びになる！' },
+    ],
+    quiz: {
+      question: 'AIに質の高いクイズを作ってもらうポイントはどれ？',
+      options: ['「面白いクイズを作って」とだけ言う', '対象・形式・問題数・解説の有無を全部伝える', 'なるべく短いプロンプトを使う', '同じクイズを何回も頼む'],
+      answer: 1,
+      ok: '🌟 正解！条件を詳しく伝えるほど使えるクイズになる。「誰が・何問・何択・解説あり」の4点を意識しよう！',
+      ng: '🤔 惜しい！正解は「条件を全部伝える」だよ。対象・形式・問題数を指定すると、すぐ使えるクイズができる。'
+    }
+  },
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：クイズをもっと面白くしよう',
+    type: 'challenge',
+    content: `<p class="lesson-text">ここからは<strong>チャレンジコース</strong>だよ！</p>`,
+    challenges: [
+      { level: '★', title: '作ったクイズを友達に出してみよう', desc: 'Claudeに作ってもらったクイズを実際に友達に出してみよう。全問正解する人はいる？難しすぎた・簡単すぎた問題はどれ？', hint: '友達の反応を見て「もっと難しく」「もっと北九州らしく」と注文して改良しよう！' },
+      { level: '★★', title: '「北九州7区クイズ」を作ろう', desc: '門司区・小倉北区・小倉南区・八幡東区・八幡西区・戸畑区・若松区、それぞれの特徴クイズを1問ずつ作ってもらおう。全7問セットで発表できるよ！', hint: 'ヒント：「北九州市の7つの区、それぞれの名物や歴史を1問ずつ、3択クイズで教えて」と聞いてみよう。' },
+      { level: '★★★', title: '（中学生向け）「なぞなぞ」と「クイズ」の違いを設計しよう', desc: 'クイズは知識を問うが、なぞなぞは言葉のひっかけやユーモアを使う。AIになぞなぞを作ってもらい、「どうやってなぞなぞは正解を隠しているか？」を分析してみよう。', hint: 'キーワード：修辞技法、ダブルミーニング、伏線。AIに「なぞなぞを3つ作って、それぞれのトリックも教えて」と頼もう。' }
+    ]
+  }
+];
+
+const TOPICS = [
+  { label: '🏯 北九州の歴史', base: '北九州の歴史' },
+  { label: '🍜 北九州の食べ物', base: '北九州の食文化' },
+  { label: '🔬 理科', base: '小学校理科' },
+  { label: '🌍 社会・地理', base: '日本の地理' },
+  { label: '⚽ スポーツ', base: 'スポーツのルールと歴史' },
+  { label: '🦁 動物', base: '動物の生態' },
+];
+const DIFFS = [
+  { label: '😊 かんたん', base: '小学低学年でも答えられるかんたんな' },
+  { label: '🤔 ふつう', base: '小学5・6年生向けのふつうの難しさの' },
+  { label: '😤 むずかしい', base: '中学生でもむずかしいと感じる' },
+];
+const COUNTS = [
+  { label: '3問', base: '3' },
+  { label: '5問', base: '5' },
+  { label: '10問', base: '10' },
+];
+
+let stepState = { currentStep: 0, completedSteps: [], quizAnswered: {}, selectedTopic: null, selectedDiff: null, selectedCount: null, triedCreate: false };
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson6-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  const params = new URLSearchParams(location.search);
+  const nameParam = params.get('name');
+  if (nameParam && !state.name) state.name = nameParam;
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson6-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro') html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'compare') html += renderCompare(step, idx);
+  else if (step.type === 'create') html += renderCreate(step, idx);
+  else if (step.type === 'summary') html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step, idx);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+
+function renderCompare(step, idx) {
+  let html = '<div class="compare-wrap">';
+  step.examples.forEach(ex => {
+    html += `<div class="compare-card"><div class="compare-header ${ex.labelClass}">${ex.label}</div><div class="compare-prompt">💬 <b>プロンプト：</b>${escHtml(ex.prompt)}</div><div class="compare-result">${escHtml(ex.response)}</div></div>`;
+  });
+  html += '</div>';
+  html += `<div class="discovery-box"><div class="discovery-title">🔍 気づいたこと</div><div class="discovery-items"><div class="discovery-item">①はとても短くて使いにくい。誰向けなのか、何問なのかわからない。</div><div class="discovery-item">②は対象と問題数を指定したら、ちゃんとした3択クイズができた！</div><div class="discovery-item">③は難易度・ひっかけ・解説まで指定したら、本当に「使えるクイズ」になった！解説があると学びにもなるよ。</div></div></div>`;
+  return html;
+}
+
+function buildPrompt() {
+  const t = stepState.selectedTopic, d = stepState.selectedDiff, c = stepState.selectedCount;
+  if (!t || !d || !c) return '← テーマ・難易度・問題数を選ぶとプロンプトが表示されるよ！';
+  return t.base + 'について、' + d.base + '3択クイズを' + c.base + '問作ってください。\n各問に「なぜそうなのか」という解説も加えてください。小学生でも読みやすい言葉で書いてね。';
+}
+
+function renderCreate(step, idx) {
+  const t = stepState.selectedTopic, d = stepState.selectedDiff, c = stepState.selectedCount;
+  let html = `<div class="quiz-builder"><div class="quiz-builder-header">❓ クイズの条件を決めよう</div>
+    <div class="builder-section"><div class="builder-label">① テーマを選んでね</div><div class="chip-row">${TOPICS.map(x => `<span class="sel-chip ${t && t.base === x.base ? 'active' : ''}" onclick="selTopic('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">② 難易度を選んでね</div><div class="chip-row">${DIFFS.map(x => `<span class="sel-chip diff-chip ${d && d.base === x.base ? 'active' : ''}" onclick="selDiff('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">③ 問題数を選んでね</div><div class="chip-row">${COUNTS.map(x => `<span class="sel-chip ${c && c.base === x.base ? 'active' : ''}" onclick="selCount('${escHtml(x.base)}','${escHtml(x.label)}')">${x.label}</span>`).join('')}</div></div>
+    <div class="builder-section"><div class="builder-label">🧾 作られるプロンプト</div><div class="prompt-preview">${escHtml(buildPrompt())}</div></div>
+  </div>`;
+  const canCreate = t && d && c;
+  html += `<button class="btn-build" onclick="openClaudeWithQuiz()" ${canCreate ? '' : 'disabled'}>${canCreate ? '🚀 このプロンプトでClaudeにクイズを作ってもらう' : '👆 テーマ・難易度・問題数を選んでね'}</button>`;
+  if (stepState.triedCreate) html += `<div class="launcher-done" style="text-align:center;margin-bottom:12px">✅ Claudeでクイズを作ったね！友達に出せるかな？</div>`;
+  return html;
+}
+
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">💡 クイズ作りの3つのコツ</div><div class="discovery-items">${step.discoveries.map(d => `<div class="discovery-item">${d.text}</div>`).join('')}</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step, idx) {
+  let html = `<div class="challenge-box"><div class="challenge-title">⭐ チャレンジミッション</div><div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div></div>`;
+  step.challenges.forEach(c => {
+    html += `<div class="mission-box" style="margin-bottom:10px"><div class="mission-title">${c.level} ${escHtml(c.title)}</div><div class="mission-text">${escHtml(c.desc)}</div><div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div><div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div></div>`;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needTopic = step.type === 'create' && !stepState.selectedTopic;
+  const needDiff  = step.type === 'create' && !stepState.selectedDiff;
+  const needCount = step.type === 'create' && !stepState.selectedCount;
+  const needTry   = step.type === 'create' && !stepState.triedCreate;
+  const blocked = needQuiz || needTopic || needDiff || needCount || needTry;
+  const hint = needTopic ? '👆 まずテーマを選んでね！' : needDiff ? '👆 難易度を選んでね！' : needCount ? '👆 問題数を選んでね！' : needTry ? '🚀 まずClaudeにクイズを作ってもらおう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 授業を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral)' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🎉</span><div class="complete-title">第6回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>AIクイズ職人になれたね。</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">「対象・形式・問題数・解説」の4点を指定すれば<br>すぐ使えるクイズが作れるよ！<br>次回は「北九州を調べよう」だよ！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+
+function nextStep(idx) {
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState(); renderApp(); showToast('🎉 第6回完了！');
+  setTimeout(() => awardBadgePopup(), 800);
+}
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+function selTopic(base, label) { stepState.selectedTopic = { base, label }; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function selDiff(base, label)  { stepState.selectedDiff  = { base, label }; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function selCount(base, label) { stepState.selectedCount = { base, label }; stepState.triedCreate = false; saveStepState(); renderStep(stepState.currentStep); }
+function openClaudeWithQuiz() {
+  const prompt = buildPrompt();
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  stepState.triedCreate = true; saveStepState();
+  showToast('🚀 Claudeが開いたよ！プロンプトをコピーして貼り付けよう！');
+  renderStep(stepState.currentStep);
+}
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+init();
+</script>
+</body>
+</html>
