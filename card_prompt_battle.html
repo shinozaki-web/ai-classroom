@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎴 プロンプト比べ | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #1a1a2e 0%, #7C6FE0 60%, #F26B5B 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  /* カテゴリフィルター */
+  .cat-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+  .cat-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .cat-chip:hover, .cat-chip.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  /* デッキエリア */
+  .deck-area { text-align: center; margin-bottom: 20px; }
+  .deck-visual { position: relative; width: 120px; height: 80px; margin: 0 auto 16px; }
+  .deck-card { position: absolute; width: 80px; height: 56px; border-radius: 8px; background: linear-gradient(135deg, #7C6FE0, #F26B5B); }
+  .deck-card:nth-child(1) { top: 8px; left: 24px; transform: rotate(-6deg); opacity: 0.4; }
+  .deck-card:nth-child(2) { top: 4px; left: 22px; transform: rotate(-3deg); opacity: 0.6; }
+  .deck-card:nth-child(3) { top: 0; left: 20px; transform: rotate(0deg); }
+  .btn-draw { background: linear-gradient(135deg, #7C6FE0, #F26B5B); color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 900; font-family: 'M PLUS Rounded 1c', sans-serif; padding: 16px 32px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 20px rgba(124,111,224,0.4); }
+  .btn-draw:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(124,111,224,0.5); }
+  .btn-draw:active { transform: translateY(0); }
+  .deck-count { font-size: 12px; color: var(--ink-soft); margin-top: 10px; }
+
+  /* お題カード */
+  .odai-card { border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; animation: cardIn 0.3s ease; }
+  @keyframes cardIn { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .odai-card-head { padding: 14px 18px 12px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
+  .odai-cat-badge { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 99px; }
+  .odai-num { font-size: 11px; opacity: 0.8; }
+  .odai-card-body { background: var(--white); padding: 18px 18px 16px; }
+  .odai-title { font-size: 20px; font-weight: 900; color: var(--ink); margin-bottom: 10px; line-height: 1.4; }
+  .odai-body-text { font-size: 14px; color: var(--ink-mid); line-height: 1.7; margin-bottom: 12px; }
+  .constraint-box { background: #FFF0EE; border: 2px solid var(--coral); border-radius: 10px; padding: 9px 13px; font-size: 13px; color: #b03a2e; font-weight: 700; margin-bottom: 10px; line-height: 1.6; }
+  .constraint-label { font-size: 11px; margin-bottom: 3px; }
+  .hint-toggle { background: none; border: 1.5px dashed #C8D0E0; color: var(--ink-soft); font-size: 12px; font-weight: 700; font-family: 'M PLUS Rounded 1c', sans-serif; padding: 6px 14px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .hint-toggle:hover { border-color: var(--amber); color: #b87d00; }
+  .hint-box { background: var(--amber-light); border: 1.5px solid var(--amber); border-radius: 10px; padding: 9px 13px; font-size: 13px; color: #b87d00; line-height: 1.6; margin-top: 8px; display: none; }
+  .hint-box.show { display: block; }
+
+  /* マイプロンプトエリア */
+  .my-prompt-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px; margin-bottom: 16px; }
+  .my-prompt-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .my-prompt-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; line-height: 1.6; }
+  .my-prompt-textarea { width: 100%; box-sizing: border-box; border: 2px solid #E0E4F0; border-radius: 10px; padding: 11px 13px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif; outline: none; resize: vertical; min-height: 100px; color: var(--ink); transition: border-color 0.2s; }
+  .my-prompt-textarea:focus { border-color: var(--purple); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--purple); background: var(--purple-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+
+  .btn-redraw { width: 100%; margin-top: 8px; padding: 11px; background: var(--bg); border: 2px dashed #C8D0E0; color: var(--ink-soft); border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-redraw:hover { border-color: var(--purple); color: var(--purple); }
+
+  /* 先生モードバナー */
+  .teacher-banner { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 12px; padding: 10px 14px; font-size: 12px; color: #b87d00; line-height: 1.6; margin-bottom: 16px; }
+
+  /* カラーマップ */
+  .color-coral .odai-card-head { background: linear-gradient(135deg, #F26B5B, #F5A623); }
+  .color-amber .odai-card-head { background: linear-gradient(135deg, #F5A623, #F26B5B); }
+  .color-sky   .odai-card-head { background: linear-gradient(135deg, #2563a8, #4A90E2); }
+  .color-purple .odai-card-head { background: linear-gradient(135deg, #7C6FE0, #2563a8); }
+  .color-mint  .odai-card-head { background: linear-gradient(135deg, #34C88A, #4A90E2); }
+
+  .tips-box { background: var(--purple-light); border: 2px solid var(--purple); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div id="app-screen" style="display:block">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🎴</div>
+      <div class="card-hero-title">プロンプト比べ</div>
+      <div class="card-hero-desc">カードを引いてお題をゲット！<br>みんな同じお題、プロンプトは自分で考える。誰の答えが一番面白い？</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🎲 ランダム</span>
+        <span class="card-tag">🏆 比べる</span>
+        <span class="card-tag">💬 プロンプト</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+
+        <div id="teacher-banner" style="display:none" class="teacher-banner"></div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">カテゴリで絞り込む（任意）</div>
+        <div class="cat-row" id="cat-row"></div>
+
+        <div class="deck-area" id="deck-area">
+          <div class="deck-visual">
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+            <div class="deck-card"></div>
+          </div>
+          <button class="btn-draw" onclick="drawCard()">🎴 カードを引く！</button>
+          <div class="deck-count" id="deck-count"></div>
+        </div>
+
+        <div id="odai-area" style="display:none">
+          <div id="odai-card-el"></div>
+
+          <div class="my-prompt-card">
+            <div class="my-prompt-title">✏️ マイプロンプトを考えよう</div>
+            <div class="my-prompt-sub">お題を達成するために、どんなプロンプトをClaudeに送る？<br>自分で考えて書いてから送ろう。正解はない！</div>
+            <textarea class="my-prompt-textarea" id="my-prompt" placeholder="ここに自分のプロンプトを書こう…"></textarea>
+            <div class="btn-row">
+              <button class="btn-copy" onclick="copyMyPrompt()">📋 コピー</button>
+              <button class="btn-open" onclick="openWithMyPrompt()">🚀 Claudeで試す</button>
+            </div>
+          </div>
+
+          <button class="btn-redraw" onclick="drawCard()">🎴 別のカードを引く</button>
+        </div>
+
+        <div class="tips-box" style="margin-top:16px">
+          <div class="tips-title">👩‍🏫 授業での使い方（先生向け）</div>
+          <div class="tip-item">全員が同じカードを使うには、URLに <strong>?card=番号</strong> を付けて共有（例：?card=5）</div>
+          <div class="tip-item">カードを引いたら2〜3分で各自プロンプトを考えてClaudeに送る</div>
+          <div class="tip-item">スクリーンに結果を並べて「一番〇〇な答えはどれ？」を投票で決める</div>
+          <div class="tip-item">「なぜその聞き方をしたか」を発表させると思考力が育つ</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const ODAI = [
+  { cat:'制約チャレンジ', catEmoji:'🔒', color:'coral',
+    title:'「ありがとう」なしで感謝を伝えよう',
+    body:'「ありがとう」「感謝します」などの感謝を直接表す言葉を一切使わずに、相手に感謝の気持ちが伝わる文章をClaudeに作ってもらおう。',
+    constraint:'「ありがとう」「感謝」などの感謝の言葉を直接使ってはダメ',
+    hint:'「どんな気持ちか説明して」「どんな行動で表すか書いて」などが使えるよ' },
+
+  { cat:'制約チャレンジ', catEmoji:'🔒', color:'coral',
+    title:'数字なしで「100」を説明しよう',
+    body:'数字（0〜9）も「百」という漢字も使わずに、100がどのくらいの量かを相手に伝える文章をClaudeに作ってもらおう。',
+    constraint:'数字・漢数字を一切使ってはダメ',
+    hint:'身近なもの（100円玉・1クラスの人数など）を使う例えを指示してみよう' },
+
+  { cat:'制約チャレンジ', catEmoji:'🔒', color:'coral',
+    title:'10文字以内で「急いで！」を伝えよう',
+    body:'急いでほしいというメッセージを10文字以内でClaudeに作ってもらおう。インパクトのある短い文章で。',
+    constraint:'10文字以内（！や。なども1文字とカウント）',
+    hint:'文字数の制限と「インパクトを重視して」の両方を指示してみよう' },
+
+  { cat:'制約チャレンジ', catEmoji:'🔒', color:'coral',
+    title:'動物の例えだけでチームワークを説明しよう',
+    body:'「チームワーク」という言葉を使わずに、動物の例え話だけで小学生に意味を説明してもらおう。',
+    constraint:'動物の例え話のみ使うこと。「チームワーク」という言葉は禁止',
+    hint:'「どの動物を使う」かを先に指定すると面白い結果になるよ' },
+
+  { cat:'制約チャレンジ', catEmoji:'🔒', color:'coral',
+    title:'色と音だけで「悲しい」を表現しよう',
+    body:'「悲しい」という感情を、色と音だけで表現する詩や文章をClaudeに書いてもらおう。',
+    constraint:'色と音の描写だけで表現。「悲しい」「涙」「泣く」は禁止',
+    hint:'「〜色のような」「〜の音がする感じ」という形で指定してみよう' },
+
+  { cat:'役割チャレンジ', catEmoji:'🎭', color:'amber',
+    title:'好きな職業の人として「勉強しろ」と言ってもらおう',
+    body:'「もっと勉強しなさい」というメッセージを、自分が選んだ職業の人（スポーツ選手・料理人・宇宙飛行士など）として語ってもらおう。',
+    constraint:'ありきたりな「先生」「お母さん」は禁止。ユニークな職業を選ぼう',
+    hint:'職業を指定するだけでなく「その人らしい言葉遣いで」と付け加えると◎' },
+
+  { cat:'役割チャレンジ', catEmoji:'🎭', color:'amber',
+    title:'好きなキャラクターとして宿題をやる気にさせてもらおう',
+    body:'宿題をやりたくない気持ちを吹き飛ばしてくれる一言を、好きなキャラクターとして言ってもらおう。',
+    constraint:'キャラクターの口調・性格を再現させること',
+    hint:'「〇〇のキャラとして」だけでなく「〇〇らしい話し方で」も追加してみよう' },
+
+  { cat:'役割チャレンジ', catEmoji:'🎭', color:'amber',
+    title:'給食のカレーを外国人に4つの役割で説明しよう',
+    body:'カレーライスを食べたことがない外国人に向けて、①料理人 ②科学者 ③子ども ④ロボット の役割で説明させよう。',
+    constraint:'4つの役割を全部試して、一番おもしろかった説明を選ぶ',
+    hint:'役割が変わるだけでこんなに違う！という発見を楽しもう' },
+
+  { cat:'役割チャレンジ', catEmoji:'🎭', color:'amber',
+    title:'友達との仲直り案を2人の立場でもらおう',
+    body:'友達とケンカした状況を設定して、①校長先生として ②一番の親友として、仲直りのアドバイスをもらおう。',
+    constraint:'同じ状況の説明を使って役割だけ変えること',
+    hint:'どちらのアドバイスが現実的か、クラスで話し合ってみよう' },
+
+  { cat:'北九州テーマ', catEmoji:'🏙️', color:'sky',
+    title:'北九州を3つの言葉で表して',
+    body:'北九州市を「3つの言葉（キーワード）」だけで表現してもらおう。全員の3つを並べると、どんな北九州像が見えてくる？',
+    constraint:'必ず3つだけ。「北九州市」という言葉自体は使わないこと',
+    hint:'どんな観点で選ぶか（食・歴史・自然・人など）を先に指定してみよう' },
+
+  { cat:'北九州テーマ', catEmoji:'🏙️', color:'sky',
+    title:'門司港の魅力を1文で伝えよう',
+    body:'門司港に来たことがない人に「絶対行ってみたい！」と思わせる1文をClaudeに作ってもらおう。',
+    constraint:'1文のみ。「すごい」「きれい」などの曖昧な言葉は禁止',
+    hint:'対象（外国人・お年寄り・子供）を先に指定すると答えが変わるよ' },
+
+  { cat:'北九州テーマ', catEmoji:'🏙️', color:'sky',
+    title:'焼きうどんを食べたくなるキャッチコピーを作ろう',
+    body:'北九州の焼きうどんを食べたことがない人が「食べてみたい！」と思うキャッチコピーを作ってもらおう。',
+    constraint:'10〜20文字以内。「おいしい」という言葉は使わないこと',
+    hint:'「誰に向けた」「どんな場面で使う」コピーかを先に決めよう' },
+
+  { cat:'北九州テーマ', catEmoji:'🏙️', color:'sky',
+    title:'50年後の北九州を予測しよう',
+    body:'2075年の北九州市はどんな街になっているか、良い変化・悪い変化どちらも含めて予測してもらおう。',
+    constraint:'現実的な根拠も1つ入れること',
+    hint:'「楽観的な未来」vs「悲観的な未来」の2パターンもらうのもおすすめ' },
+
+  { cat:'難問チャレンジ', catEmoji:'🧪', color:'purple',
+    title:'「なぜ人は死ぬの？」を小学1年生に説明しよう',
+    body:'小学1年生が「なぜ人は死ぬの？」と聞いてきた場面を想定して、やさしく正直に答えてもらおう。怖くならないように。',
+    constraint:'小学1年生が理解できる言葉で。科学的・哲学的どちらのアプローチも可',
+    hint:'「〇〇という観点から」「怖くない言い方で」「例え話で」などを工夫しよう' },
+
+  { cat:'難問チャレンジ', catEmoji:'🧪', color:'purple',
+    title:'「公平」と「平等」の違いを説明しよう',
+    body:'「公平」と「平等」の違いを、具体的な例を使って子どもにわかるように説明してもらおう。',
+    constraint:'具体例を必ず1つ含めること',
+    hint:'「運動会のリレー」「給食の量」など場面を先に設定するとわかりやすくなるよ' },
+
+  { cat:'難問チャレンジ', catEmoji:'🧪', color:'purple',
+    title:'AIは友達になれる？両方の意見を言ってもらおう',
+    body:'「AIは人間の友達になれるか」という問いに、賛成・反対の両方の意見をClaudeに述べてもらおう。',
+    constraint:'賛成・反対それぞれ理由を2つずつ。最後にClaudeの自分の意見も',
+    hint:'Claudeに「あなた自身はどう思いますか？」と必ず入れよう' },
+
+  { cat:'難問チャレンジ', catEmoji:'🧪', color:'purple',
+    title:'夢と現実の違いを2つの意味で説明しよう',
+    body:'「夢」を、①眠っているときに見る夢 ②将来の目標としての夢、の2つの意味で子どもに説明してもらおう。',
+    constraint:'2つの意味どちらも必ず扱うこと',
+    hint:'「まず〜について、次に〜について」と構成を指定してみよう' },
+
+  { cat:'比較実験', catEmoji:'🔬', color:'mint',
+    title:'丁寧に頼む vs 命令する——答えは変わる？',
+    body:'「北九州の歴史を教えて」を①タメ口で命令 ②丁寧にお願い の2パターンで送って、答えの違いを比べよう。',
+    constraint:'全く同じ内容を、言い方だけ変えること',
+    hint:'どちらが詳しいか・どちらが読みやすいか記録しておこう' },
+
+  { cat:'比較実験', catEmoji:'🔬', color:'mint',
+    title:'短く頼む vs 詳しく頼む——質は変わる？',
+    body:'「面白い話を作って」を①1行で送る ②条件を5つ以上つけて送る の2パターンで比べよう。',
+    constraint:'②は条件を5つ以上つけること',
+    hint:'条件をつけすぎると逆効果になる場合も。実験してみよう' },
+
+  { cat:'比較実験', catEmoji:'🔬', color:'mint',
+    title:'日本語 vs 英語——答えの内容は変わる？',
+    body:'「北九州市について教えて」と英語"Tell me about Kitakyushu city"を両方送って、答えの内容・量・観点が変わるか調べよう。',
+    constraint:'同じ質問を言語だけ変えること',
+    hint:'英語の方が情報量が多いことも。なぜそうなるか考えてみよう' }
+];
+
+const CATS = ['すべて', ...new Set(ODAI.map(o => o.cat))];
+let filterCat = 'すべて';
+let drawnHistory = [];
+let currentOdai = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+
+  // カテゴリチップ
+  document.getElementById('cat-row').innerHTML = CATS.map(c =>
+    `<span class="cat-chip${c === filterCat ? ' active' : ''}" onclick="setCat('${c}')">${c}</span>`
+  ).join('');
+
+  // URL ?card=N で特定カードを指定（先生が共有URLを送る用）
+  const params = new URLSearchParams(location.search);
+  const forced = params.get('card');
+  if (forced) {
+    const idx = parseInt(forced) - 1;
+    if (ODAI[idx]) {
+      document.getElementById('teacher-banner').style.display = 'block';
+      document.getElementById('teacher-banner').innerHTML = `👩‍🏫 先生から指定されたカード（No.${forced}）です`;
+      showOdai(idx);
+      return;
+    }
+  }
+  updateDeckCount();
+}
+
+function setCat(c) {
+  filterCat = c;
+  document.querySelectorAll('.cat-chip').forEach(el => el.classList.toggle('active', el.textContent === c));
+  drawnHistory = [];
+  updateDeckCount();
+}
+
+function getPool() {
+  const pool = ODAI.map((o, i) => ({ ...o, idx: i })).filter(o => filterCat === 'すべて' || o.cat === filterCat);
+  const remaining = pool.filter(o => !drawnHistory.includes(o.idx));
+  return remaining.length > 0 ? remaining : pool; // リセット
+}
+
+function updateDeckCount() {
+  const pool = getPool();
+  document.getElementById('deck-count').textContent = `残り ${pool.length} 枚`;
+}
+
+function drawCard() {
+  const pool = getPool();
+  if (pool.length === 0) return;
+  if (drawnHistory.length >= (filterCat === 'すべて' ? ODAI.length : ODAI.filter(o => o.cat === filterCat).length)) {
+    drawnHistory = [];
+  }
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  drawnHistory.push(picked.idx);
+  showOdai(picked.idx);
+}
+
+function showOdai(idx) {
+  currentOdai = idx;
+  const o = ODAI[idx];
+
+  document.getElementById('deck-area').style.display = 'none';
+  document.getElementById('odai-area').style.display = 'block';
+  document.getElementById('my-prompt').value = '';
+
+  document.getElementById('odai-card-el').innerHTML = `
+    <div class="odai-card color-${o.color}">
+      <div class="odai-card-head">
+        <span class="odai-cat-badge">${o.catEmoji} ${o.cat}</span>
+        <span class="odai-num">No.${idx + 1}</span>
+      </div>
+      <div class="odai-card-body">
+        <div class="odai-title">${escHtml(o.title)}</div>
+        <div class="odai-body-text">${escHtml(o.body)}</div>
+        <div class="constraint-box"><div class="constraint-label">🔒 制約・ルール</div>${escHtml(o.constraint)}</div>
+        <button class="hint-toggle" onclick="toggleHint(this)">💡 ヒントを見る</button>
+        <div class="hint-box">${escHtml(o.hint)}</div>
+      </div>
+    </div>
+  `;
+  updateDeckCount();
+  document.getElementById('odai-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleHint(btn) {
+  const box = btn.nextElementSibling;
+  box.classList.toggle('show');
+  btn.textContent = box.classList.contains('show') ? '💡 ヒントを隠す' : '💡 ヒントを見る';
+}
+
+function copyMyPrompt() {
+  const txt = document.getElementById('my-prompt').value;
+  if (!txt.trim()) { showToast('プロンプトを書いてからコピーしよう！'); return; }
+  navigator.clipboard.writeText(txt).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openWithMyPrompt() {
+  const txt = document.getElementById('my-prompt').value;
+  if (txt.trim()) navigator.clipboard.writeText(txt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>
