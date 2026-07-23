@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⌨️ タイピング道場 | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #1a1a2e 0%, #2563a8 60%, #4A90E2 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .level-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .level-chip { flex: 1; min-width: 80px; background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 10px 8px; border-radius: 12px; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .level-chip:hover { border-color: var(--sky); background: var(--sky-light); }
+  .level-chip.lv-white.active { background: #F7F8FC; color: #333; border-color: #888; }
+  .level-chip.lv-green.active { background: var(--mint); color: white; border-color: var(--mint); }
+  .level-chip.lv-black.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+  .level-chip .lv-emoji { font-size: 20px; display: block; margin-bottom: 3px; }
+  .level-chip .lv-desc { font-size: 10px; font-weight: 400; opacity: 0.75; }
+
+  .game-card { background: var(--white); border-radius: 16px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .game-header { background: var(--sky); color: white; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; }
+  .game-body { padding: 16px; }
+
+  .sentence-display { background: var(--bg); border-radius: 12px; border: 2px solid #E0E4F0; padding: 16px; font-size: 22px; line-height: 1.6; text-align: center; margin-bottom: 14px; min-height: 64px; letter-spacing: 0.05em; font-family: 'Noto Sans JP', sans-serif; font-weight: 700; color: var(--ink); word-break: break-all; }
+  .sentence-display.result-view { font-size: 18px; text-align: left; }
+  .char-correct { color: #219653; }
+  .char-wrong { color: #F26B5B; text-decoration: underline wavy #F26B5B; }
+  .char-missing { color: #aaa; }
+
+  .timer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .timer-display { font-size: 28px; font-weight: 900; color: var(--sky); font-family: 'M PLUS Rounded 1c', sans-serif; }
+  .sentence-counter { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+
+  .typing-area { width: 100%; box-sizing: border-box; border: 2px solid #E0E4F0; border-radius: 12px; padding: 12px 14px; font-size: 16px; font-family: 'Noto Sans JP', sans-serif; outline: none; resize: none; height: 80px; transition: border-color 0.2s; color: var(--ink); background: var(--white); }
+  .typing-area:focus { border-color: var(--sky); }
+  .typing-area:disabled { background: var(--bg); color: #aaa; }
+
+  .btn-start { width: 100%; margin-top: 10px; padding: 14px; background: var(--sky); color: white; border: none; border-radius: 12px; font-size: 16px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-start:hover { background: var(--sky-dark); }
+  .btn-done { width: 100%; margin-top: 10px; padding: 14px; background: var(--mint); color: white; border: none; border-radius: 12px; font-size: 16px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-next { width: 100%; margin-top: 10px; padding: 14px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 16px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-retry { width: 100%; margin-top: 8px; padding: 12px; background: var(--bg); color: var(--ink-mid); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+
+  .result-box { background: var(--bg); border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
+  .result-stars { font-size: 28px; text-align: center; margin-bottom: 8px; }
+  .result-stats { display: flex; gap: 12px; justify-content: center; margin-bottom: 10px; }
+  .result-stat { text-align: center; }
+  .result-stat-num { font-size: 22px; font-weight: 900; color: var(--sky); }
+  .result-stat-label { font-size: 11px; color: var(--ink-soft); font-weight: 700; }
+  .result-comment { font-size: 13px; color: var(--ink-mid); text-align: center; font-weight: 700; margin-bottom: 10px; }
+
+  .done-box { background: linear-gradient(135deg, var(--sky-light), var(--purple-light)); border-radius: 14px; padding: 20px; text-align: center; margin-top: 10px; }
+  .done-title { font-size: 20px; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
+  .done-score { font-size: 36px; font-weight: 900; color: var(--sky); margin-bottom: 6px; }
+  .done-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
+
+  .highscore-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 16px; }
+  .highscore-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+  .hs-row { display: flex; gap: 10px; }
+  .hs-item { flex: 1; text-align: center; background: var(--bg); border-radius: 10px; padding: 8px 4px; }
+  .hs-emoji { font-size: 16px; }
+  .hs-name { font-size: 10px; color: var(--ink-soft); font-weight: 700; }
+  .hs-val { font-size: 14px; font-weight: 900; color: var(--sky); }
+
+  .tips-box { background: var(--sky-light); border: 2px solid var(--sky); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: var(--sky-dark); margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "⌨️"; flex-shrink: 0; }
+
+  .select-hint { text-align: center; padding: 30px 20px; color: var(--ink-soft); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app-screen" style="display:block">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">⌨️</div>
+      <div class="card-hero-title">タイピング道場</div>
+      <div class="card-hero-desc">白帯→黒帯まで、タイピングスキルを上げよう！<br>北九州とAIをテーマにした文章で練習。</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">⌨️ タイピング</span>
+        <span class="card-tag">🏙️ 北九州</span>
+        <span class="card-tag">⏱️ 速さ</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① 段位を選ぼう</div>
+        <div class="level-row" id="level-row"></div>
+
+        <div id="game-area">
+          <div class="select-hint" id="select-hint">⬆️ まず段位を選んでね！</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highscore-card">
+      <div class="highscore-title">🏆 ベストスコア（正確率）</div>
+      <div class="hs-row" id="hs-row"></div>
+    </div>
+
+    <div class="tips-box">
+      <div class="tips-title">⌨️ タイピングのコツ</div>
+      <div class="tip-item">ホームポジション（左手：Fに人差し指、右手：Jに人差し指）から始めよう</div>
+      <div class="tip-item">速さより正確さを先に意識しよう。ミスが減ると自然に速くなる</div>
+      <div class="tip-item">ひらがなは「ローマ字入力」で練習するのがおすすめ（例：「き」→ki）</div>
+      <div class="tip-item">毎日少しずつ練習すると、1ヶ月で別人のように速くなる！</div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const LEVELS = [
+  {
+    id: 'white', emoji: '🤍', name: '白帯', cls: 'lv-white', headerColor: '#888',
+    sentences: [
+      'きたきゅうしゅう',
+      'もじこうはみなとまちです',
+      'よいしつもんがよいこたえをうみます',
+      'ことばをていねいにえらぶとつたわります',
+      'きょうもいちにちがんばりましょう'
+    ]
+  },
+  {
+    id: 'green', emoji: '💚', name: '緑帯', cls: 'lv-green', headerColor: '#34C88A',
+    sentences: [
+      '北九州市には七つの区があります',
+      '門司港には明治時代の建物が残っています',
+      '焼きうどんは北九州市が発祥の料理です',
+      'AIに役割を与えると答えの質が変わります',
+      'プロンプトを工夫するとAIを使いこなせます'
+    ]
+  },
+  {
+    id: 'black', emoji: '🖤', name: '黒帯', cls: 'lv-black', headerColor: '#1a1a2e',
+    sentences: [
+      'AIは私たちの生活を豊かにするための道具です',
+      '北九州市は鉄の街から環境先進都市へと変化しました',
+      'AIのウソを見抜くためには情報を確かめる習慣が必要です',
+      '自分で考える力とAIを使う力を両方育てることが大切です',
+      'よいプロンプトを考えることでAIの回答の質が高まります'
+    ]
+  }
+];
+
+let gamePhase = 'select'; // select | idle | typing | result | done
+let currentLevel = null;
+let sentenceIdx = 0;
+let startTime = null;
+let timerEl = null;
+let timerInterval = null;
+let timerStarted = false;
+let sessionResults = [];
+let highScores = {};
+
+const HS_KEY = 'typing-highscores';
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const hs = localStorage.getItem(HS_KEY);
+  if (hs) { try { highScores = JSON.parse(hs); } catch(e) {} }
+
+  const row = document.getElementById('level-row');
+  row.innerHTML = LEVELS.map((l, i) => `
+    <div class="level-chip ${l.cls}" onclick="selectLevel(${i})">
+      <span class="lv-emoji">${l.emoji}</span>
+      ${l.name}
+      <div class="lv-desc">${i===0?'ひらがな':i===1?'北九州テーマ':'難しい文章'}</div>
+    </div>
+  `).join('');
+
+  renderHighScores();
+}
+
+function renderHighScores() {
+  document.getElementById('hs-row').innerHTML = LEVELS.map(l => {
+    const hs = highScores[l.id];
+    return `<div class="hs-item">
+      <div class="hs-emoji">${l.emoji}</div>
+      <div class="hs-name">${l.name}</div>
+      <div class="hs-val">${hs ? hs.acc + '%' : '-'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectLevel(i) {
+  currentLevel = LEVELS[i];
+  sentenceIdx = 0;
+  sessionResults = [];
+  document.querySelectorAll('.level-chip').forEach((c, ci) => {
+    c.classList.toggle('active', ci === i);
+  });
+  renderIdle();
+}
+
+function renderIdle() {
+  gamePhase = 'idle';
+  timerStarted = false;
+  clearInterval(timerInterval);
+
+  const lvl = currentLevel;
+  const sent = lvl.sentences[sentenceIdx];
+
+  document.getElementById('select-hint').style.display = 'none';
+  document.getElementById('game-area').innerHTML = `
+    <div class="game-card">
+      <div class="game-header" style="background:${lvl.headerColor}">
+        <span>${lvl.emoji} ${lvl.name}</span>
+        <span class="sentence-counter">${sentenceIdx + 1} / ${lvl.sentences.length}</span>
+      </div>
+      <div class="game-body">
+        <div class="sentence-display" id="sentence-display">${escapeHtml(sent)}</div>
+        <div class="timer-row">
+          <div class="timer-display" id="timer-display">0.0秒</div>
+          <div style="font-size:12px;color:var(--ink-soft)">スタートを押して入力しよう</div>
+        </div>
+        <textarea class="typing-area" id="typing-area" disabled placeholder="ここに入力してね"></textarea>
+        <button class="btn-start" onclick="startTyping()">▶ スタート</button>
+      </div>
+    </div>
+  `;
+}
+
+function startTyping() {
+  gamePhase = 'typing';
+  const ta = document.getElementById('typing-area');
+  ta.disabled = false;
+  ta.value = '';
+  ta.focus();
+  timerStarted = false;
+
+  ta.addEventListener('keydown', onFirstKey, { once: true });
+
+  document.querySelector('.btn-start').outerHTML =
+    '<button class="btn-done" onclick="finishTyping()">✅ 完了</button>';
+}
+
+function onFirstKey() {
+  if (timerStarted) return;
+  timerStarted = true;
+  startTime = Date.now();
+  const timerEl = document.getElementById('timer-display');
+  timerInterval = setInterval(() => {
+    const sec = ((Date.now() - startTime) / 1000).toFixed(1);
+    if (timerEl) timerEl.textContent = sec + '秒';
+  }, 100);
+}
+
+function finishTyping() {
+  clearInterval(timerInterval);
+  const elapsed = timerStarted ? (Date.now() - startTime) / 1000 : 0;
+  const typed = (document.getElementById('typing-area').value || '').trim();
+  const target = currentLevel.sentences[sentenceIdx];
+
+  let correct = 0;
+  for (let i = 0; i < target.length; i++) {
+    if (i < typed.length && typed[i] === target[i]) correct++;
+  }
+  const acc = Math.round((correct / target.length) * 100);
+  const cpm = elapsed > 0 ? Math.round((typed.length / elapsed) * 60) : 0;
+
+  sessionResults.push({ acc, cpm, elapsed });
+
+  const stars = acc >= 95 ? '★★★' : acc >= 80 ? '★★' : acc >= 60 ? '★' : '';
+  const comment = acc >= 95 ? 'パーフェクト！' : acc >= 80 ? 'よくできました！' : acc >= 60 ? 'もう少し！' : 'もう一度チャレンジ！';
+
+  const compHtml = getComparisonHtml(target, typed);
+
+  document.getElementById('game-area').innerHTML = `
+    <div class="game-card">
+      <div class="game-header" style="background:${currentLevel.headerColor}">
+        <span>${currentLevel.emoji} ${currentLevel.name}</span>
+        <span class="sentence-counter">${sentenceIdx + 1} / ${currentLevel.sentences.length}</span>
+      </div>
+      <div class="game-body">
+        <div class="sentence-display result-view" id="sentence-display">${compHtml}</div>
+        <div class="result-box">
+          <div class="result-stars">${stars || '💪'}</div>
+          <div class="result-stats">
+            <div class="result-stat"><div class="result-stat-num">${acc}%</div><div class="result-stat-label">正確率</div></div>
+            <div class="result-stat"><div class="result-stat-num">${elapsed.toFixed(1)}秒</div><div class="result-stat-label">タイム</div></div>
+            <div class="result-stat"><div class="result-stat-num">${cpm}</div><div class="result-stat-label">文字/分</div></div>
+          </div>
+          <div class="result-comment">${comment}</div>
+        </div>
+        ${sentenceIdx + 1 < currentLevel.sentences.length
+          ? `<button class="btn-next" onclick="nextSentence()">次の文へ →</button>`
+          : `<button class="btn-next" onclick="showDone()">結果を見る 🏆</button>`}
+        <button class="btn-retry" onclick="renderIdle()">もう一度この文を練習</button>
+      </div>
+    </div>
+  `;
+  gamePhase = 'result';
+}
+
+function nextSentence() {
+  sentenceIdx++;
+  renderIdle();
+}
+
+function showDone() {
+  const totalAcc = Math.round(sessionResults.reduce((s, r) => s + r.acc, 0) / sessionResults.length);
+  const totalCpm = Math.round(sessionResults.reduce((s, r) => s + r.cpm, 0) / sessionResults.length);
+  const stars = totalAcc >= 95 ? '★★★' : totalAcc >= 80 ? '★★' : totalAcc >= 60 ? '★' : '💪';
+
+  if (!highScores[currentLevel.id] || highScores[currentLevel.id].acc < totalAcc) {
+    highScores[currentLevel.id] = { acc: totalAcc, cpm: totalCpm };
+    localStorage.setItem(HS_KEY, JSON.stringify(highScores));
+    renderHighScores();
+  }
+
+  document.getElementById('game-area').innerHTML = `
+    <div class="done-box">
+      <div class="done-title">${currentLevel.emoji} ${currentLevel.name} クリア！</div>
+      <div class="done-score">${stars}</div>
+      <div style="font-size:22px;font-weight:900;color:var(--sky);margin-bottom:4px">平均正確率 ${totalAcc}%</div>
+      <div class="done-sub">平均速さ ${totalCpm}文字/分</div>
+      <button class="btn-start" onclick="selectLevel(${LEVELS.indexOf(currentLevel)})">もう一度チャレンジ</button>
+      ${LEVELS.indexOf(currentLevel) < LEVELS.length - 1
+        ? `<button class="btn-next" style="margin-top:8px" onclick="selectLevel(${LEVELS.indexOf(currentLevel) + 1})">次の段位へ →</button>`
+        : '<div style="margin-top:10px;font-size:13px;color:var(--ink-soft)">🎉 全段位クリア！すごい！</div>'}
+    </div>
+  `;
+  gamePhase = 'done';
+}
+
+function getComparisonHtml(target, typed) {
+  let html = '';
+  for (let i = 0; i < target.length; i++) {
+    const t = escapeHtml(target[i]);
+    if (i < typed.length) {
+      html += typed[i] === target[i]
+        ? `<span class="char-correct">${t}</span>`
+        : `<span class="char-wrong">${t}</span>`;
+    } else {
+      html += `<span class="char-missing">${t}</span>`;
+    }
+  }
+  return html;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

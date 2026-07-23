@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>☀️ 夏の自由研究 | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #F5A623 0%, #F26B5B 60%, #7C6FE0 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .step-progress { display: flex; gap: 6px; margin-bottom: 20px; align-items: center; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .step-dot.done { background: var(--mint); color: white; }
+  .step-dot.active { background: var(--amber); color: white; box-shadow: 0 0 0 3px rgba(245,166,35,0.25); }
+  .step-dot.future { background: #E0E4F0; color: #aaa; }
+  .step-line { flex: 1; height: 2px; background: #E0E4F0; }
+  .step-line.done { background: var(--mint); }
+
+  .step-header { font-size: 16px; font-weight: 900; color: var(--ink); margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 16px; }
+
+  .area-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .area-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .area-chip:hover { border-color: var(--amber); background: var(--amber-light); }
+  .area-chip.active { background: var(--amber); color: white; border-color: var(--amber); }
+
+  .input-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+  .step-input { width: 100%; box-sizing: border-box; border: 2px solid #E0E4F0; border-radius: 10px; padding: 11px 13px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif; outline: none; color: var(--ink); background: var(--white); transition: border-color 0.2s; }
+  .step-input:focus { border-color: var(--amber); }
+  .step-textarea { width: 100%; box-sizing: border-box; border: 2px solid #E0E4F0; border-radius: 10px; padding: 11px 13px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif; outline: none; color: var(--ink); background: var(--white); resize: vertical; min-height: 80px; transition: border-color 0.2s; }
+  .step-textarea:focus { border-color: var(--amber); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin: 14px 0; }
+  .prompt-box-head { background: var(--amber); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 12px 14px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 12px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .btn-copy { flex: 1; padding: 11px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 13px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--amber); background: var(--amber-light); }
+  .btn-open { flex: 2; padding: 11px; background: var(--amber); color: white; border: none; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+
+  .nav-row { display: flex; gap: 10px; margin-top: 6px; }
+  .btn-prev { flex: 1; padding: 12px; background: var(--bg); color: var(--ink-mid); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-next-step { flex: 2; padding: 12px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; }
+
+  .warning-inline { background: var(--amber-light); border: 1.5px solid var(--amber); border-radius: 10px; padding: 8px 12px; font-size: 12px; color: #b87d00; line-height: 1.6; margin-bottom: 12px; }
+
+  .done-card { background: linear-gradient(135deg, var(--amber-light), var(--purple-light)); border-radius: 16px; padding: 24px 20px; text-align: center; }
+  .done-icon { font-size: 48px; margin-bottom: 10px; }
+  .done-title { font-size: 20px; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
+  .done-topic { font-size: 15px; color: var(--sky-dark); font-weight: 700; margin-bottom: 6px; }
+  .done-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 16px; }
+  .done-final-prompt { background: var(--white); border-radius: 12px; padding: 14px; font-size: 12px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; text-align: left; border: 2px solid var(--amber); margin-bottom: 14px; max-height: 300px; overflow-y: auto; }
+  .btn-restart { width: 100%; padding: 12px; background: var(--amber); color: white; border: none; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div id="app-screen" style="display:block">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">☀️</div>
+      <div class="card-hero-title">夏の自由研究</div>
+      <div class="card-hero-desc">テーマ決め→仮説→調査→まとめ→発表まで<br>AIと一緒に自由研究を完成させよう！</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🔬 調べ学習</span>
+        <span class="card-tag">📝 まとめ</span>
+        <span class="card-tag">🎤 発表</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body" id="step-body">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const SUMMER_KEY = 'summer-research-v1';
+const STEP_LABELS = ['テーマ', '疑問', '仮説', '調べる', 'まとめ'];
+
+let rs = {
+  step: 0,
+  area: '',
+  topic: '',
+  question: '',
+  hypothesis: '',
+  findings: ''
+};
+
+const AREAS = [
+  { label: '🌿 自然・科学', val: '自然・科学' },
+  { label: '🐾 生き物', val: '生き物' },
+  { label: '🏙️ 北九州', val: '北九州・地域' },
+  { label: '🍜 料理・食べ物', val: '料理・食べ物' },
+  { label: '🚀 乗り物・テクノロジー', val: '乗り物・テクノロジー' },
+  { label: '📜 歴史・社会', val: '歴史・社会' }
+];
+
+function loadRs() {
+  const s = localStorage.getItem(SUMMER_KEY);
+  if (s) { try { rs = { ...rs, ...JSON.parse(s) }; } catch(e) {} }
+}
+function saveRs() {
+  localStorage.setItem(SUMMER_KEY, JSON.stringify(rs));
+}
+
+function init() {
+  loadState();
+  loadRs();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderStep();
+}
+
+function renderProgress() {
+  const total = STEP_LABELS.length;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const cls = i < rs.step ? 'done' : i === rs.step ? 'active' : 'future';
+    html += `<div class="step-dot ${cls}">${i < rs.step ? '✓' : i + 1}</div>`;
+    if (i < total - 1) html += `<div class="step-line ${i < rs.step ? 'done' : ''}"></div>`;
+  }
+  return `<div class="step-progress">${html}</div>`;
+}
+
+function renderStep() {
+  const body = document.getElementById('step-body');
+  if (rs.step === 0) body.innerHTML = renderStep0();
+  else if (rs.step === 1) body.innerHTML = renderStep1();
+  else if (rs.step === 2) body.innerHTML = renderStep2();
+  else if (rs.step === 3) body.innerHTML = renderStep3();
+  else if (rs.step === 4) body.innerHTML = renderStep4();
+  else body.innerHTML = renderDone();
+
+  // restore chip selections
+  if (rs.step === 0 && rs.area) {
+    document.querySelectorAll('.area-chip').forEach(c => c.classList.toggle('active', c.dataset.val === rs.area));
+  }
+}
+
+function renderStep0() {
+  const prompt = rs.topic
+    ? `「${rs.topic}」について自由研究をしたいです。\nこのテーマで調べられること・面白い切り口を5つ提案してください。\n各提案に「調べ方のヒント」も1文で添えてください。`
+    : '← テーマを入れると、Claudeへの質問が自動生成されます';
+
+  return `
+    ${renderProgress()}
+    <div class="step-header">① テーマを決めよう</div>
+    <div class="step-desc">何について調べたい？ジャンルを選んで、具体的なテーマを入力しよう。</div>
+    <div class="area-chips">${AREAS.map(a => `<span class="area-chip" data-val="${a.val}" onclick="selectArea('${a.val}',this)">${a.label}</span>`).join('')}</div>
+    <div class="input-label">どんなことを調べたい？（具体的に書こう）</div>
+    <input class="step-input" id="topic-input" placeholder="例：焼きうどんはなぜ北九州が発祥なの？" value="${escHtml(rs.topic)}" oninput="onTopicInput(this.value)">
+    <div class="prompt-box">
+      <div class="prompt-box-head">📋 Step1プロンプト <span style="font-size:11px;font-weight:400;opacity:0.85">テーマ候補を出してもらう</span></div>
+      <div class="prompt-box-body"><div class="prompt-text" id="p0">${escHtml(prompt)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-copy" onclick="copyPrompt('p0')">📋 コピー</button>
+      <button class="btn-open" onclick="openClaude('p0')">🚀 Claudeで試す</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-next-step" onclick="goNext(0)" style="flex:1">次へ：疑問を決める →</button>
+    </div>
+  `;
+}
+
+function renderStep1() {
+  const prompt = rs.question
+    ? `「${rs.question}」という問いで自由研究をします。\nこの問いに対して、どんな調べ方（方法）が考えられますか？3つ教えてください。\n・本やインターネットで調べる方法\n・実験・観察で調べる方法\n・人に聞いて調べる方法`
+    : '← 調べたい疑問を入力してください';
+
+  return `
+    ${renderProgress()}
+    <div class="step-header">② 調べたいことを絞り込もう</div>
+    <div class="step-desc">テーマの中で「一番知りたい疑問」を1つ決めよう。「なぜ？」「どうして？」「〇〇はいつから？」のような形にするといい。</div>
+    <div class="input-label">調べたい疑問（「〜なのはなぜ？」のように書こう）</div>
+    <input class="step-input" id="question-input" placeholder="例：焼きうどんはなぜ北九州発祥なのか？" value="${escHtml(rs.question)}" oninput="onQuestionInput(this.value)">
+    <div class="warning-inline">💡 Claudeが提案したテーマ候補の中から選んでもOK！自分が一番面白いと思うものを選ぼう</div>
+    <div class="prompt-box">
+      <div class="prompt-box-head">📋 Step2プロンプト <span style="font-size:11px;font-weight:400;opacity:0.85">調べ方を相談する</span></div>
+      <div class="prompt-box-body"><div class="prompt-text" id="p1">${escHtml(prompt)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-copy" onclick="copyPrompt('p1')">📋 コピー</button>
+      <button class="btn-open" onclick="openClaude('p1')">🚀 Claudeで試す</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="goStep(0)">← 戻る</button>
+      <button class="btn-next-step" onclick="goNext(1)">次へ：仮説を立てる →</button>
+    </div>
+  `;
+}
+
+function renderStep2() {
+  const prompt = rs.hypothesis
+    ? `自由研究のテーマ：「${rs.question || rs.topic}」\n私の仮説：「${rs.hypothesis}」\n\nこの仮説について：\n①この仮説が正しい場合に当てはまりそうなことを2つ\n②この仮説が間違っている場合に当てはまりそうなことを2つ\n③仮説を確かめるために「特に注目すべきポイント」を1つ\nを教えてください。`
+    : '← 仮説を入力してください';
+
+  return `
+    ${renderProgress()}
+    <div class="step-header">③ 仮説を立てよう</div>
+    <div class="step-desc">「きっとこうだろう」という予想を書こう。正解じゃなくていい。調べた後にどう変わったかが大事！</div>
+    <div class="input-label">「${escHtml(rs.question || 'テーマ')}」について、あなたの予想は？</div>
+    <textarea class="step-textarea" id="hypothesis-input" placeholder="例：昔、北九州が港として栄えていたころに生まれた料理だと思う。小麦が安く手に入ったからじゃないかな。" oninput="onHypothesisInput(this.value)">${escHtml(rs.hypothesis)}</textarea>
+    <div class="prompt-box">
+      <div class="prompt-box-head">📋 Step3プロンプト <span style="font-size:11px;font-weight:400;opacity:0.85">仮説を検証する視点をもらう</span></div>
+      <div class="prompt-box-body"><div class="prompt-text" id="p2">${escHtml(prompt)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-copy" onclick="copyPrompt('p2')">📋 コピー</button>
+      <button class="btn-open" onclick="openClaude('p2')">🚀 Claudeで試す</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-prev" onclick="goStep(1)">← 戻る</button>
+      <button class="btn-next-step" onclick="goNext(2)">次へ：AIと調べる →</button>
+    </div>
+  `;
+}
+
+function renderStep3() {
+  const q = rs.question || rs.topic || 'テーマ';
+  const h = rs.hypothesis || '（仮説なし）';
+  const prompt = `「${q}」について詳しく教えてください。\n\n以下の形式でまとめてください：\n\n【結論・答え】（2〜3文）\n\n【理由・仕組み】（詳しく3〜5文）\n\n【具体的な例・データ・数字】\n\n【意外な事実・豆知識】（2つ）\n\n【北九州や九州との関係】（あれば）\n\n【もっと深く調べるなら？】（次のステップ提案）\n\nなお私の仮説は「${h}」でした。仮説が正しかったか、どこが違ったかもコメントしてください。`;
+
+  return `
+    ${renderProgress()}
+    <div class="step-header">④ AIと一緒に調べよう</div>
+    <div class="step-desc">プロンプトをClaudeに送って、詳しく調べよう。返ってきた内容を読んで、「わかったこと」を下のメモ欄に書こう。</div>
+    <div class="prompt-box">
+      <div class="prompt-box-head">📋 Step4プロンプト <span style="font-size:11px;font-weight:400;opacity:0.85">メイン調査</span></div>
+      <div class="prompt-box-body"><div class="prompt-text" id="p3">${escHtml(prompt)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-copy" onclick="copyPrompt('p3')">📋 コピー</button>
+      <button class="btn-open" onclick="openClaude('p3')">🚀 Claudeで試す</button>
+    </div>
+    <div class="input-label" style="margin-top:6px">📝 Claudeを読んでわかったこと・気づいたことをメモしよう</div>
+    <textarea class="step-textarea" id="findings-input" style="min-height:120px" placeholder="Claudeの回答を読んで、大切だと思ったことを自分の言葉で書こう" oninput="onFindingsInput(this.value)">${escHtml(rs.findings)}</textarea>
+    <div class="nav-row" style="margin-top:10px">
+      <button class="btn-prev" onclick="goStep(2)">← 戻る</button>
+      <button class="btn-next-step" onclick="goNext(3)">次へ：まとめを作る →</button>
+    </div>
+  `;
+}
+
+function renderStep4() {
+  const q = rs.question || rs.topic || 'テーマ';
+  const h = rs.hypothesis || '（なし）';
+  const f = rs.findings || '（メモなし）';
+  const name = state.name || 'わたし';
+  const prompt = `自由研究のまとめを作ってください。\n\n【研究テーマ】${q}\n【仮説】${h}\n【調べてわかったこと】${f}\n\n以下の2つを作ってください：\n\n①1分間の発表原稿（200〜250文字）\n「こんにちは。○年○組の${name}です。わたしは〜について調べました。」のように始める。\n\n②研究まとめシート（見出しつき・400文字程度）\n見出し：テーマ・仮説・調べてわかったこと・まとめ・参考にしたこと`;
+
+  return `
+    ${renderProgress()}
+    <div class="step-header">⑤ まとめと発表原稿を作ろう</div>
+    <div class="step-desc">ここまでの内容をClaudeに送ると、発表原稿とまとめシートを自動で作ってくれる！<br>できたものを自分でアレンジして完成させよう。</div>
+    <div class="prompt-box">
+      <div class="prompt-box-head">📋 Step5プロンプト <span style="font-size:11px;font-weight:400;opacity:0.85">発表原稿＋まとめシート</span></div>
+      <div class="prompt-box-body"><div class="prompt-text" id="p4">${escHtml(prompt)}</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-copy" onclick="copyPrompt('p4')">📋 コピー</button>
+      <button class="btn-open" onclick="openClaude('p4')">🚀 Claudeで試す</button>
+    </div>
+    <div class="warning-inline">💡 Claudeが作った原稿は「たたき台」！自分の言葉に書き直すと、もっと良い発表になるよ</div>
+    <div class="nav-row" style="margin-top:6px">
+      <button class="btn-prev" onclick="goStep(3)">← 戻る</button>
+      <button class="btn-next-step" onclick="goStep(5)">🎉 完成！</button>
+    </div>
+  `;
+}
+
+function renderDone() {
+  return `
+    <div class="done-card">
+      <div class="done-icon">🎊</div>
+      <div class="done-title">自由研究コンプリート！</div>
+      <div class="done-topic">「${escHtml(rs.question || rs.topic)}」</div>
+      <div class="done-desc">全5ステップを完走したよ！<br>Claudeに作ってもらった原稿を自分でアレンジして、発表会で披露しよう。</div>
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;text-align:left">⭐ もっとやってみよう</div>
+      <div style="font-size:13px;color:var(--ink-mid);line-height:1.7;text-align:left;margin-bottom:16px">
+        🔶 「発表の練習をしたいです。私の原稿を聞いてフィードバックして」とClaudeに頼もう<br>
+        🔶 「この研究をポスターにするならどんな構成が良いか」を相談しよう<br>
+        🔷 「この研究の続編テーマを5つ提案して」と頼んで、次の研究の種を見つけよう
+      </div>
+      <button class="btn-restart" onclick="restartResearch()">🔄 新しいテーマで始める</button>
+      <button class="btn-restart" style="background:var(--purple);margin-top:8px" onclick="goStep(0)">← ステップを見直す</button>
+    </div>
+  `;
+}
+
+// ===== Event handlers =====
+function selectArea(val, el) {
+  rs.area = val;
+  document.querySelectorAll('.area-chip').forEach(c => c.classList.toggle('active', c.dataset.val === val));
+  saveRs();
+}
+
+function onTopicInput(v) {
+  rs.topic = v;
+  saveRs();
+  const prompt = v
+    ? `「${v}」について自由研究をしたいです。\nこのテーマで調べられること・面白い切り口を5つ提案してください。\n各提案に「調べ方のヒント」も1文で添えてください。`
+    : '← テーマを入れると、Claudeへの質問が自動生成されます';
+  const el = document.getElementById('p0');
+  if (el) el.textContent = prompt;
+}
+
+function onQuestionInput(v) {
+  rs.question = v;
+  saveRs();
+  const prompt = v
+    ? `「${v}」という問いで自由研究をします。\nこの問いに対して、どんな調べ方（方法）が考えられますか？3つ教えてください。\n・本やインターネットで調べる方法\n・実験・観察で調べる方法\n・人に聞いて調べる方法`
+    : '← 調べたい疑問を入力してください';
+  const el = document.getElementById('p1');
+  if (el) el.textContent = prompt;
+}
+
+function onHypothesisInput(v) {
+  rs.hypothesis = v;
+  saveRs();
+  const q = rs.question || rs.topic || 'テーマ';
+  const prompt = v
+    ? `自由研究のテーマ：「${q}」\n私の仮説：「${v}」\n\nこの仮説について：\n①この仮説が正しい場合に当てはまりそうなことを2つ\n②この仮説が間違っている場合に当てはまりそうなことを2つ\n③仮説を確かめるために「特に注目すべきポイント」を1つ\nを教えてください。`
+    : '← 仮説を入力してください';
+  const el = document.getElementById('p2');
+  if (el) el.textContent = prompt;
+}
+
+function onFindingsInput(v) {
+  rs.findings = v;
+  saveRs();
+}
+
+function goNext(fromStep) {
+  // Validate
+  if (fromStep === 0 && !rs.topic) { showToast('テーマを入力してね！'); return; }
+  if (fromStep === 1 && !rs.question) { showToast('調べたい疑問を入力してね！'); return; }
+  if (fromStep === 2 && !rs.hypothesis) { showToast('仮説を入力してね！'); return; }
+  if (fromStep === 3 && !rs.findings) { showToast('メモを書いてから次へ進もう！'); return; }
+  goStep(fromStep + 1);
+}
+
+function goStep(n) {
+  rs.step = n;
+  saveRs();
+  renderStep();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyPrompt(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openClaude(id) {
+  copyPrompt(id);
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function restartResearch() {
+  if (!confirm('新しいテーマで始めますか？（今のデータは消えます）')) return;
+  rs = { step: 0, area: '', topic: '', question: '', hypothesis: '', findings: '' };
+  saveRs();
+  renderStep();
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>
