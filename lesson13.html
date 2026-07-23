@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第13回：北九州の課題をAIで解決しよう | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .issue-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 12px; cursor: pointer; border: 2.5px solid transparent; transition: all 0.15s; }
+  .issue-card.active { border-color: var(--mint); }
+  .issue-head { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .issue-body { padding: 0 16px 14px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+
+  .prompt-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-head { background: var(--mint); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; }
+  .prompt-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .prompt-section:last-child { border-bottom: none; }
+  .prompt-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+  .prompt-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; min-height: 60px; white-space: pre-wrap; }
+  .btn-ask { width: calc(100% - 32px); margin: 12px 16px; padding: 13px; background: var(--mint); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-ask:hover { background: #27a674; }
+  .btn-ask:disabled { background: #ccc; cursor: not-allowed; }
+
+  .deepen-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 12px; cursor: pointer; border: 2.5px solid transparent; transition: all 0.15s; }
+  .deepen-card.active { border-color: var(--sky); }
+  .deepen-head { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .deepen-body { padding: 0 16px 14px; font-size: 13px; color: var(--ink-mid); line-height: 1.6; }
+  .deepen-prompt { background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--ink-mid); margin-top: 8px; font-style: italic; border: 1px solid #E0E4F0; }
+  .btn-deepen { width: calc(100% - 32px); margin: 0 16px 16px; padding: 13px; background: var(--sky); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-deepen:hover { background: var(--sky-dark); }
+  .btn-deepen:disabled { background: #ccc; cursor: not-allowed; }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 16px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第13回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>知る</span><span>相談</span><span>深掘り</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 13;
+
+const ISSUES = [
+  {
+    icon: '👴',
+    bg: '#EBF4FF',
+    color: '#2563a8',
+    title: '少子高齢化・若者が減っている',
+    desc: '北九州市の人口はピーク時の約110万人から90万人以下に減少しています。特に若い世代が福岡市など他の都市に移ってしまっています。',
+    prompt: '北九州市では若者が減り続けています。なぜ若者が他の都市に移ってしまうのか、その理由と、若者が住みたいと思える北九州市にするためのアイデアを教えてください。小学生にもわかりやすく教えてください。'
+  },
+  {
+    icon: '🏚️',
+    bg: '#FFF8EB',
+    color: '#b87d00',
+    title: '空き家・空き店舗が増えている',
+    desc: '人口が減ると、使われなくなった家や店舗が増えます。空き家は管理されないと危険になったり、街が暗い印象になったりします。',
+    prompt: '北九州市では空き家や空き店舗が増えています。空き家問題の原因と、空き家を活用して街を元気にするアイデアを教えてください。子どもや若者が参加できる活用方法も含めて考えてほしいです。'
+  },
+  {
+    icon: '🌊',
+    bg: '#E8FBF2',
+    color: '#085041',
+    title: '海・川の環境を守りたい',
+    desc: '北九州市は昔「公害の街」と呼ばれましたが、市民の努力できれいな海がよみがえりました。この豊かな環境を未来に残すためのアイデアを考えよう。',
+    prompt: '北九州市は昔の公害問題を乗り越えて海や川がきれいになりました。この自然環境を守り続けるために、子どもたちにできることや、地域全体でできる取り組みのアイデアを教えてください。'
+  },
+  {
+    icon: '🎭',
+    bg: '#F0EEFF',
+    color: '#534AB7',
+    title: '観光・門司港をもっと盛り上げたい',
+    desc: '門司港レトロは有名な観光地ですが、もっと多くの人に来てもらいたい。子どもから大人まで楽しめる門司港の魅力をAIと一緒に考えよう。',
+    prompt: '北九州市の門司港レトロをもっと多くの人に訪れてもらうために、どんなアイデアが効果的ですか？特に子どもや家族連れが楽しめる観光のアイデアを教えてください。'
+  }
+];
+
+const DEEPEN_OPTIONS = [
+  {
+    icon: '🔍',
+    bg: '#EBF4FF',
+    title: '「なぜ？」を深掘りする',
+    desc: '問題の根本的な原因をもっと詳しく聞こう',
+    promptSuffix: 'その問題が起きている根本的な原因を、もっと詳しく3つの視点から説明してください。'
+  },
+  {
+    icon: '💡',
+    bg: '#FFF8EB',
+    title: '「成功事例」を調べる',
+    desc: '日本や世界の他の地域でうまくいった例を聞こう',
+    promptSuffix: '日本や世界で、この問題をうまく解決した都市や地域の具体的な成功事例を3つ教えてください。'
+  },
+  {
+    icon: '👶',
+    bg: '#E8FBF2',
+    title: '「子どもにできること」を考える',
+    desc: '小学生・中学生でも実際にできることを聞こう',
+    promptSuffix: '小学生や中学生が、この問題の解決に実際に参加できる具体的なアクションを5つ教えてください。'
+  }
+];
+
+const STEPS = [
+  {
+    icon: '🏙️',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 1',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: '北九州が抱えているリアルな課題を知ろう',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">これまでAIで詩や調査・発表資料を作ってきた。<br>
+      今回は本物の「社会の課題」にAIと一緒に向き合ってみよう。</p>
+      <div class="info-box">
+        <b>🏙️ 北九州市のいま：</b><br>
+        ・人口：約90万人（40年前は110万人以上）<br>
+        ・かつては「公害の街」→市民の努力で環境を回復<br>
+        ・製鉄・港湾・ものづくりで栄えた産業都市<br>
+        ・今も「環境・技術・ものづくり」の誇りを持つ街
+      </div>
+      <p class="lesson-text">北九州には解決したい課題がたくさんある。でも、課題があるということは<strong>「アイデアが生きる場所がある」</strong>ということでもある。AIを使って、あなたのアイデアを広げてみよう。</p>
+    `,
+    quiz: {
+      question: 'AIを使って社会課題を考えるとき、一番大切なのは？',
+      options: [
+        'AIが出した答えをそのまま市役所に送る',
+        'AIのアイデアをヒントにしながら、自分で考えて深めていく',
+        'AIに全部解決してもらう',
+        '答えが出るまで同じ質問を繰り返す'
+      ],
+      answer: 1,
+      ok: '🎯 そう！AIは「考えるためのパートナー」。最終的に考えるのは人間——きみ自身だよ。AIのアイデアを土台に、自分の視点で深めることが大切！',
+      ng: '🤔 ちょっと違うよ！AIが出したアイデアはあくまで「ヒント」。大切なのは、そのアイデアをきみ自身が考えて広げ、深めていくことだよ。'
+    }
+  },
+
+  {
+    icon: '🗣️',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 2',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '課題を選んでAIに相談しよう',
+    type: 'explore',
+    content: `<p class="lesson-text">4つの課題の中から<strong>1つ選んで</strong>、Claudeに相談してみよう。<br>選んだ課題についてのプロンプトが自動で作られるよ！</p>`
+  },
+
+  {
+    icon: '🔬',
+    iconBg: '#FFF8EB',
+    tag: 'STEP 3',
+    tagColor: '#FFF8EB',
+    tagText: '#b87d00',
+    title: '提案を深掘りしよう',
+    type: 'deepen',
+    content: `<p class="lesson-text">Claudeの提案を受け取ったね。<br>今度はさらに<strong>深掘りする視点</strong>を選んで、もっと詳しく聞いてみよう！</p>`
+  },
+
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: 'まとめ：AIと地域をつなぐ力',
+    type: 'summary',
+    content: `<p class="lesson-text">今日の授業で体験したことをまとめよう。</p>`,
+    discoveries: [
+      { text: '<b>「課題を知る」から始まる：</b>社会課題はAIに聞く前に「何が問題か」を自分なりに理解することが大切。背景を知るほど、AIへの質問が深くなる' },
+      { text: '<b>「深掘り」がカギ：</b>最初の答えで満足せず「なぜ？」「どうやって？」「他には？」と聞き続けると、AIから本当に使えるアイデアが出てくる' },
+      { text: '<b>「自分の地域」を起点にすると強い：</b>北九州という具体的な場所・人・歴史を伝えると、AIの答えがより地域に合ったものになる' }
+    ],
+    quiz: {
+      question: 'AIに課題解決のアイデアを聞くとき、一番効果的なのは？',
+      options: [
+        '「北九州の課題を解決して」と一言だけ聞く',
+        '課題の背景・地域の特徴・誰のためかを伝えてから聞く',
+        '問題の解決策を先に自分で決めてから聞く',
+        '「ベストな解決策を一つだけ教えて」と制限をつけて聞く'
+      ],
+      answer: 1,
+      ok: '🌟 完璧！「誰の・どんな課題で・背景は何か」をきちんと伝えるほど、AIの答えは現実的で役立つものになるよ。今日はまさにそれを体験したね！',
+      ng: '🤔 惜しい！AIに課題解決を聞くときは、背景・地域・誰のためかをできるだけ詳しく伝えよう。情報が多いほど、AIのアイデアが現実に使えるものになるよ！'
+    }
+  },
+
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：北九州の未来を提案しよう',
+    type: 'challenge',
+    content: `<p class="lesson-text">ここからは<strong>チャレンジコース</strong>！<br>北九州の課題解決をさらに深めてみよう。</p>`,
+    challenges: [
+      {
+        level: '★',
+        title: '気になる課題を1つ選んでアイデアをまとめよう',
+        desc: 'Claudeに相談したアイデアの中から「これならできそう！」と思うものを1つ選んで、自分の言葉でまとめてみよう。「なぜこのアイデアがよいか」も一緒に。',
+        hint: 'Claudeに「このアイデアの中で一番実現しやすいものを教えて」と追加で聞いてみよう'
+      },
+      {
+        level: '★★',
+        title: '別の課題にも挑戦しよう',
+        desc: 'STEP2で選ばなかった課題についても、Claudeに相談してみよう。2つの課題のアイデアを比べて、「共通するポイント」と「違うポイント」を見つけてみよう。',
+        hint: '2つの課題を並べて「どちらが北九州にとってより重要だと思いますか？理由も教えてください」とClaudeに聞いてみよう'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）解決策の「提案書」を作ろう',
+        desc: '北九州市長に提案するつもりで、「課題・現状・解決策・実施方法・期待される効果」の5項目で提案書を作ろう。Claudeに「この構成で提案書を書いてください」と頼んでもよい。',
+        hint: 'キーワード：提案書・政策提言・実現可能性。Claudeに「私が小学生（中学生）だとして、市長に提案できる内容に調整してください」と伝えてみよう'
+      }
+    ]
+  }
+];
+
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  selectedIssue: null,
+  askedClaude: false,
+  selectedDeepen: null,
+  deepened: false
+};
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson13-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  const p = new URLSearchParams(location.search);
+  const n = p.get('name');
+  if (n && !state.name) { state.name = n; saveState(); }
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson13-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro')      html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'explore')   html += renderExplore();
+  else if (step.type === 'deepen')    html += renderDeepen();
+  else if (step.type === 'summary')   html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+
+function renderExplore() {
+  const sel = stepState.selectedIssue !== null ? ISSUES[stepState.selectedIssue] : null;
+  let html = '';
+  ISSUES.forEach((issue, i) => {
+    const active = stepState.selectedIssue === i;
+    html += `
+      <div class="issue-card ${active ? 'active' : ''}" onclick="selectIssue(${i})">
+        <div class="issue-head" style="background:${issue.bg};color:${issue.color}">${issue.icon} ${escHtml(issue.title)}</div>
+        <div class="issue-body">${escHtml(issue.desc)}</div>
+      </div>
+    `;
+  });
+
+  if (sel) {
+    html += `
+      <div class="prompt-builder">
+        <div class="prompt-head">📝 自動で作られたプロンプト</div>
+        <div class="prompt-section">
+          <div class="prompt-label">選んだ課題：${escHtml(sel.icon + ' ' + sel.title)}</div>
+          <div class="prompt-preview">${escHtml(sel.prompt)}</div>
+        </div>
+      </div>
+      <button class="btn-ask" onclick="askClaude()">🚀 このプロンプトでClaudeに相談する</button>
+    `;
+  }
+
+  if (stepState.askedClaude) {
+    html += `<div style="text-align:center;font-size:13px;color:var(--mint);font-weight:700;margin-bottom:12px">✅ Claudeに相談したね！アイデアを受け取ったら次へ進もう。</div>`;
+  }
+  return html;
+}
+
+function renderDeepen() {
+  const sel = stepState.selectedDeepen !== null ? DEEPEN_OPTIONS[stepState.selectedDeepen] : null;
+  const issue = stepState.selectedIssue !== null ? ISSUES[stepState.selectedIssue] : null;
+  let html = '';
+
+  if (issue) {
+    html += `<div style="background:var(--mint-light);border-radius:10px;padding:10px 14px;font-size:13px;color:#085041;font-weight:700;margin-bottom:14px">📌 選んだ課題：${escHtml(issue.icon + ' ' + issue.title)}</div>`;
+  }
+
+  DEEPEN_OPTIONS.forEach((d, i) => {
+    const active = stepState.selectedDeepen === i;
+    html += `
+      <div class="deepen-card ${active ? 'active' : ''}" onclick="selectDeepen(${i})">
+        <div class="deepen-head" style="background:${d.bg}">${d.icon} ${escHtml(d.title)}</div>
+        <div class="deepen-body">
+          ${escHtml(d.desc)}
+          ${active ? `<div class="deepen-prompt">追加プロンプト：「${escHtml(d.promptSuffix)}」</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  if (sel) {
+    html += `<button class="btn-deepen" onclick="deepenAsk()">🔬 この角度でもっと深く聞く</button>`;
+  }
+  if (stepState.deepened) {
+    html += `<div style="text-align:center;font-size:13px;color:var(--mint);font-weight:700;margin-bottom:12px">✅ 深掘り完了！Claudeの答えを読んでみよう。</div>`;
+  }
+  return html;
+}
+
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">🏙️ AIと地域をつなぐ力</div><div class="discovery-items">`;
+  step.discoveries.forEach(d => { html += `<div class="discovery-item">${d.text}</div>`; });
+  html += `</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step) {
+  let html = `<div class="challenge-box"><div class="challenge-title">⭐ チャレンジミッション</div><div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div></div>`;
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz   = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needIssue  = step.type === 'explore' && stepState.selectedIssue === null;
+  const needAsk    = step.type === 'explore' && !stepState.askedClaude;
+  const needDeepen = step.type === 'deepen' && !stepState.deepened;
+  const blocked = needQuiz || needIssue || needAsk || needDeepen;
+  const hint = needIssue ? '📌 課題を1つ選んでね！' : needAsk ? '🚀 Claudeに相談してから進もう！' : needDeepen ? '🔬 深掘りしてから進もう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 第13回を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral);' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🏙️</span><div class="complete-title">第13回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、すごい！<br>地域の課題にAIで向き合えたよ！</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">いよいよ最終回！第14回の卒業チャレンジで<br>すなQバッジをゲットしよう！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+
+function nextStep(idx) {
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState(); renderApp();
+  showToast('🎉 第13回完了！いよいよ最終回！');
+}
+
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+
+function selectIssue(i) {
+  stepState.selectedIssue = i;
+  stepState.askedClaude = false;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function askClaude() {
+  if (stepState.selectedIssue === null) return;
+  const prompt = ISSUES[stepState.selectedIssue].prompt;
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  stepState.askedClaude = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('🚀 Claudeが開いたよ！プロンプトをコピーして貼り付けよう！');
+}
+
+function selectDeepen(i) {
+  stepState.selectedDeepen = i;
+  stepState.deepened = false;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function deepenAsk() {
+  if (stepState.selectedDeepen === null) return;
+  const suffix = DEEPEN_OPTIONS[stepState.selectedDeepen].promptSuffix;
+  navigator.clipboard.writeText(suffix).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  stepState.deepened = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('🔬 Claudeが開いたよ！追加の質問を送ってみよう！');
+}
+
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第14回：卒業チャレンジ・すなQバッジゲット！ | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .mission-select { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 12px; cursor: pointer; border: 2.5px solid transparent; transition: all 0.15s; }
+  .mission-select.active { border-color: var(--coral); }
+  .mission-select-head { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .mission-select-body { padding: 0 16px 14px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+
+  .mission-prompt { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .mission-prompt-head { background: var(--coral); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; }
+  .mission-prompt-body { padding: 12px 16px; }
+  .mission-prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; white-space: pre-wrap; }
+  .btn-mission { width: calc(100% - 32px); margin: 12px 16px; padding: 13px; background: var(--coral); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-mission:hover { background: #c0392b; }
+  .btn-mission:disabled { background: #ccc; cursor: not-allowed; }
+
+  .present-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 12px; }
+  .present-num { display: inline-block; background: var(--coral); color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+  .present-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .present-text { font-size: 13px; color: var(--ink-mid); line-height: 1.6; }
+
+  .reflect-box { background: var(--white); border: 2px solid #E0E4F0; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .reflect-q { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: flex-start; gap: 8px; }
+  .reflect-hint { font-size: 12px; color: var(--ink-soft); line-height: 1.6; background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+
+  .block3-complete { background: linear-gradient(135deg, #1a7a4a 0%, #2563a8 50%, #534AB7 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 16px; }
+  .block3-badge { font-size: 48px; margin-bottom: 8px; }
+  .block3-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; letter-spacing: 0.02em; }
+  .block3-sub { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+
+  .final-complete { background: linear-gradient(135deg, #F5A623 0%, #F26B5B 50%, #7C6FE0 100%); border-radius: 18px; padding: 28px 20px; text-align: center; color: white; margin-bottom: 16px; }
+  .final-badge { font-size: 56px; margin-bottom: 10px; }
+  .final-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; letter-spacing: 0.04em; }
+  .final-sub { font-size: 13px; opacity: 0.9; line-height: 1.8; }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第14回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>復習</span><span>ミッション</span><span>発表</span><span>振り返り</span><span>卒業🏆</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 14;
+
+const MISSION_OPTIONS = [
+  {
+    icon: '🔍',
+    bg: '#FDECEA',
+    color: '#c0392b',
+    title: '「ハルシネーション対策ガイド」を作る',
+    desc: 'AIの間違いから身を守るためのガイドを作って、友達や家族に教えよう。「AIを信じていい場面・疑うべき場面」も整理しよう。',
+    prompt: '「AIのハルシネーションから身を守るためのガイド」を小学生・中学生向けに作ってください。\n・ハルシネーションとは何か\n・間違いやすい3つの場面\n・確認する方法3つ\n・「AIをうまく使うための心がまえ」\nを含めて、わかりやすく整理してください。'
+  },
+  {
+    icon: '⚖️',
+    bg: '#F0EEFF',
+    color: '#534AB7',
+    title: '「クラスのAIルール」を提案する',
+    desc: '学校や教室でAIを使うときのルールを考えて提案しよう。「やっていいこと・ダメなこと・グレーゾーン」の3つに分けて整理しよう。',
+    prompt: '小学校の教室でAIを使うときのルールを提案書形式で作ってください。\n・やっていいこと（3つ以上）\n・してはいけないこと（3つ以上）\n・判断が難しいグレーゾーン（2つ）\n・なぜそのルールが必要か\nを含めて、先生やクラスメートに説明できる内容にしてください。'
+  },
+  {
+    icon: '🏙️',
+    bg: '#E8FBF2',
+    color: '#085041',
+    title: '「北九州未来プロジェクト」を発表する',
+    desc: '北九州の課題に対して自分が考えたアイデアをまとめ、発表用の資料を作ろう。AIに手伝ってもらいながら「自分の言葉」で提案しよう。',
+    prompt: '北九州市の課題解決プロジェクトの発表資料の骨格を作ってください。\n・課題の名前とその現状\n・なぜこの課題を選んだか（自分の言葉で）\n・解決策のアイデア（3つ）\n・実現するために必要なこと\n・この取り組みで北九州がどう変わるか\nの5項目で、発表5分程度の内容を作ってください。'
+  }
+];
+
+const STEPS = [
+  {
+    icon: '🎓',
+    iconBg: '#FDECEA',
+    tag: 'STEP 1',
+    tagColor: '#FDECEA',
+    tagText: '#c0392b',
+    title: 'Block③の総仕上げクイズ',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">いよいよ最終回！Block③「AIを問い直す」で学んだことを総復習しよう。</p>
+      <div class="block3-complete">
+        <div class="block3-badge">🎓</div>
+        <div class="block3-title">Block③で学んだこと</div>
+        <div class="block3-sub">
+          第11回：AIのウソ（ハルシネーション）を見破る<br>
+          第12回：AIの使い方のルールを考える<br>
+          第13回：北九州の課題をAIで解決する<br>
+          この3つの力が今日のミッションで試されるよ！
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: 'AIについて正しいのはどれ？',
+      options: [
+        'AIはいつも正確な情報を答えてくれる',
+        'AIが作ったものをそのまま提出するのは常にOK',
+        'AIはウソをつくことがあるので、大切な情報は確認が必要',
+        'AIを使うと自分の考える力は必要なくなる'
+      ],
+      answer: 2,
+      ok: '🌟 完璧！AIはとても便利な道具だけれど、間違えることがある。大切な情報はファクトチェックして、最終的には自分の頭で考えることが大事だよ。14回の授業の本質がここにある！',
+      ng: '🤔 もう一度考えてみよう！AIは「正確な答えを出す機械」ではなく「考えるパートナー」。ハルシネーションもあるし、AIに全部任せると自分の力が育たない。正解は「確認が必要」だよ。'
+    }
+  },
+
+  {
+    icon: '🚀',
+    iconBg: '#FDECEA',
+    tag: 'STEP 2',
+    tagColor: '#FDECEA',
+    tagText: '#c0392b',
+    title: '卒業ミッション：AIを使いこなして証明しよう',
+    type: 'mission',
+    content: `
+      <p class="lesson-text">14回で学んだすべてを使う<strong>卒業ミッション</strong>！<br>
+      3つのテーマから1つ選んで、AIと一緒に「使いこなせる力」を証明しよう。</p>
+    `
+  },
+
+  {
+    icon: '🎤',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: '最終発表の心がまえ',
+    type: 'present',
+    content: `<p class="lesson-text">ミッションの成果を発表するための<strong>最後の確認</strong>をしよう。</p>`
+  },
+
+  {
+    icon: '🔮',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: '14回の授業を振り返ろう',
+    type: 'reflect',
+    content: `<p class="lesson-text">第1回からここまで、本当によく頑張ったね。<br>最後に大きな振り返りをしよう。</p>`
+  },
+
+  {
+    icon: '🏆',
+    iconBg: '#FFF3E0',
+    tag: 'STEP 5　卒業！',
+    tagColor: '#FFF3E0',
+    tagText: '#b87d00',
+    title: 'すなQバッジゲット！全14回コンプリート！',
+    type: 'goal',
+    content: ``
+  }
+];
+
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  selectedMission: null,
+  missionDone: false,
+  reflectDone: false
+};
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson14-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  const p = new URLSearchParams(location.search);
+  const n = p.get('name');
+  if (n && !state.name) { state.name = n; saveState(); }
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson14-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro')    html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'mission') html += renderMission();
+  else if (step.type === 'present') html += renderPresent();
+  else if (step.type === 'reflect') html += renderReflect();
+  else if (step.type === 'goal')    html += renderGoal();
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+
+function renderMission() {
+  const sel = stepState.selectedMission !== null ? MISSION_OPTIONS[stepState.selectedMission] : null;
+  let html = '';
+  MISSION_OPTIONS.forEach((m, i) => {
+    const active = stepState.selectedMission === i;
+    html += `
+      <div class="mission-select ${active ? 'active' : ''}" onclick="selectMission(${i})">
+        <div class="mission-select-head" style="background:${m.bg};color:${m.color}">${m.icon} ${escHtml(m.title)}</div>
+        <div class="mission-select-body">${escHtml(m.desc)}</div>
+      </div>
+    `;
+  });
+
+  if (sel) {
+    html += `
+      <div class="mission-prompt">
+        <div class="mission-prompt-head">📝 卒業ミッション・プロンプト</div>
+        <div class="mission-prompt-body">
+          <div class="mission-prompt-text">${escHtml(sel.prompt)}</div>
+        </div>
+      </div>
+      <button class="btn-mission" onclick="startMission()">🚀 このミッションでClaudeを使う</button>
+    `;
+  }
+
+  if (stepState.missionDone) {
+    html += `<div style="text-align:center;font-size:13px;color:var(--coral);font-weight:700;margin-bottom:12px">✅ 卒業ミッション挑戦完了！</div>`;
+  }
+  return html;
+}
+
+function renderPresent() {
+  const tips = [
+    {
+      num: '発表のコツ①',
+      title: '「AIを使って何を学んだか」を伝える',
+      text: '技術的な話より「AIを使って驚いたこと・新しく気づいたこと」を話す方が聴き手に伝わる。ハルシネーション体験・ルールを考えた体験・地域課題を考えた体験——どれも話す価値がある。'
+    },
+    {
+      num: '発表のコツ②',
+      title: '「AIと自分の役割分担」を明確にする',
+      text: '「AIにプロンプトを送ったら〇〇が出てきた。私はそこから△△を選んで、□□を追加した」と言うと、「ちゃんと自分の頭を使った」ことが伝わる。AIに全部やらせた印象を避けよう。'
+    },
+    {
+      num: '発表のコツ③',
+      title: '「疑問・モヤモヤ」を正直に話す',
+      text: 'AIについて「まだわからないこと」「納得できなかったこと」を話してもいい。完璧な答えより「自分なりに考え続けている」姿勢が一番かっこいい発表になるよ。'
+    }
+  ];
+  let html = '';
+  tips.forEach(t => {
+    html += `<div class="present-card"><div class="present-num">${t.num}</div><div class="present-title">${t.title}</div><div class="present-text">${t.text}</div></div>`;
+  });
+  html += `<div class="hint-chips" style="margin-bottom:16px"><span class="hint-chip" onclick="openClaude()">🚀 発表練習をClaudeに手伝ってもらう</span></div>`;
+  return html;
+}
+
+function renderReflect() {
+  const reflects = [
+    { q: '🌟 14回の授業で一番印象に残っていることは？', hint: 'どの回でもOK。なぜ印象に残ったか、理由も思い出してみよう' },
+    { q: '💪 「AIの使い方が変わった」と思う瞬間はあった？', hint: '最初の頃と今では、Claudeへの聞き方や向き合い方が変わっていると思う？' },
+    { q: '🔮 これからAIをどんな場面で使いたい？', hint: '学校・趣味・将来の夢——どんな場面でも。自分だけの使い方を想像してみよう' }
+  ];
+  let html = `
+    <div class="block3-complete">
+      <div class="block3-badge">🎓</div>
+      <div class="block3-title">14回の授業を完走！</div>
+      <div class="block3-sub">Block①〜③、全14回<br>AIの基礎から応用・社会活用まで体験してきた！</div>
+    </div>
+  `;
+  reflects.forEach(r => {
+    html += `<div class="reflect-box"><div class="reflect-q">🤔 ${escHtml(r.q)}</div><div class="reflect-hint">${escHtml(r.hint)}</div></div>`;
+  });
+  html += `
+    <div class="discovery-box">
+      <div class="discovery-title">💡 14回で身についた力</div>
+      <div class="discovery-items">
+        <div class="discovery-item">AIと対話する力——プロンプトで意図を伝え、必要なものを引き出せるようになった</div>
+        <div class="discovery-item">AIを疑う目——ハルシネーションを知り、情報を確認する習慣が育った</div>
+        <div class="discovery-item">AIを社会に活かす力——地域の課題にAIを当てはめて考えられるようになった</div>
+      </div>
+    </div>
+  `;
+  const done = stepState.reflectDone;
+  if (!done) html += `<button class="btn-next" onclick="doneReflect()" style="margin-bottom:0">✅ 振り返り完了！</button>`;
+  return html;
+}
+
+function renderGoal() {
+  return `
+    <div class="block3-complete">
+      <div class="block3-badge">🏖️</div>
+      <div class="block3-title">Block③コンプリート！</div>
+      <div class="block3-sub">第11〜14回、全部やり切ったね！<br>「すなQ」バッジを受け取ろう！</div>
+    </div>
+    <div style="background:var(--white);border-radius:14px;box-shadow:var(--shadow-card);padding:16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:40px;margin-bottom:6px">🏖️</div>
+      <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">すなQバッジ</div>
+      <div style="font-size:13px;color:var(--ink-soft);line-height:1.7">北九州のゆるキャラ「すなQ」。<br>Block③をコンプリートした証！<br>AIを批判的に考え・社会に活かす力を持ったしるし。</div>
+    </div>
+    <div class="final-complete">
+      <div class="final-badge">🎊</div>
+      <div class="final-title">全14回コンプリート！</div>
+      <div class="final-sub">
+        第1回〜14回、Block①②③を完走！<br>
+        「せきまる」バッジもゲット！<br><br>
+        きみは今、AIを<b>使えて・疑えて・活かせる</b><br>
+        「本物のAIリテラシー」を持った人間だ。
+      </div>
+    </div>
+    <div style="background:var(--sky-light);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--sky-dark);margin-bottom:8px">🚀 これからの道</div>
+      <div style="font-size:13px;color:var(--ink-mid);line-height:1.7">
+        ・このカリキュラムで身につけた力は、<b>中学・高校・大学・社会</b>でも役立つ<br>
+        ・中学生フェーズでは、同じ教材にさらに難しいチャレンジが加わる<br>
+        ・高校生フェーズでは、<b>Claude Codeで社会に公開するWebアプリ</b>を作るよ<br>
+        ・14回の体験を、次の誰かに教えることも「学びの証明」になる
+      </div>
+    </div>
+  `;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const needQuiz    = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needMission = step.type === 'mission' && (!stepState.selectedMission && stepState.selectedMission !== 0);
+  const needMissionDone = step.type === 'mission' && !stepState.missionDone;
+  const needReflect = step.type === 'reflect' && !stepState.reflectDone;
+  const blocked = needQuiz || needMission || needMissionDone || needReflect;
+  const hint = needMission ? '🚀 ミッションを1つ選んでね！' : needMissionDone ? '🚀 Claudeでミッションに挑戦してから進もう！' : needReflect ? '🔮 上の「振り返り完了」ボタンを押してね！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 第14回・全14回を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--amber);' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🎊</span><div class="complete-title">全14回コンプリート！！</div><div class="complete-sub">${escHtml(state.name || '')}さん、本当におめでとう！<br>門司港AI教室、卒業おめでとう！</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">「すなQ」バッジ＋「せきまる」バッジ<br>両方ゲットしたね！すごい！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+
+function nextStep(idx) {
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState(); renderApp();
+  showToast('🎊 全14回コンプリート！おめでとう！');
+  setTimeout(() => awardBadgePopup(), 800);
+  setTimeout(() => awardBadgePopup(), 4000);
+}
+
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+
+function selectMission(i) {
+  stepState.selectedMission = i;
+  stepState.missionDone = false;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function startMission() {
+  if (stepState.selectedMission === null && stepState.selectedMission !== 0) return;
+  const prompt = MISSION_OPTIONS[stepState.selectedMission].prompt;
+  navigator.clipboard.writeText(prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  stepState.missionDone = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('🚀 Claudeが開いたよ！卒業ミッションに挑戦しよう！');
+}
+
+function doneReflect() {
+  stepState.reflectDone = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('🔮 振り返り完了！いよいよ卒業だ！');
+}
+
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

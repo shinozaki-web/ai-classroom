@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第12回：AIの使い方のルール | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .scenario-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 14px; }
+  .scenario-head { background: var(--sky); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; }
+  .scenario-body { padding: 12px 16px; }
+  .scenario-text { font-size: 14px; color: var(--ink); line-height: 1.7; background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; border: 1.5px solid #E0E4F0; }
+  .scenario-btns { display: flex; gap: 8px; }
+  .scenario-btn { flex: 1; padding: 11px; border: none; border-radius: 10px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .scenario-btn-ok { background: var(--mint-light); color: #1a7a4a; }
+  .scenario-btn-ng { background: #FDECEA; color: #c0392b; }
+  .scenario-btn-ok:hover { background: var(--mint); color: white; }
+  .scenario-btn-ng:hover { background: #c0392b; color: white; }
+  .scenario-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .scenario-result { margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.6; }
+  .scenario-result-ok { background: var(--mint-light); color: #1a7a4a; font-weight: 700; }
+  .scenario-result-ng { background: #FDECEA; color: #c0392b; font-weight: 700; }
+
+  .rule-builder { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .rule-builder-head { background: var(--purple); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; }
+  .rule-section { padding: 12px 16px; border-bottom: 1px solid #F0F2FA; }
+  .rule-section:last-child { border-bottom: none; }
+  .rule-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rule-chip { background: var(--bg); border: 1.5px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .rule-chip:hover, .rule-chip.active { background: var(--purple); color: white; border-color: var(--purple); }
+  .rule-preview { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; min-height: 60px; margin-top: 8px; white-space: pre-wrap; }
+  .btn-saverule { width: calc(100% - 32px); margin: 12px 16px; padding: 13px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-saverule:hover { background: #534AB7; }
+  .btn-saverule:disabled { background: #ccc; cursor: not-allowed; }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 16px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第12回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>考える</span><span>判断</span><span>ルール</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 12;
+
+const SCENARIOS = [
+  {
+    label: 'シナリオ①',
+    text: '友達の誕生日メッセージをClaudeに書いてもらって、そのまま渡した。',
+    correct: 'ok',
+    reason: '✅ OK！プレゼントカードにAIの文章を使うのは問題ありません。ただし「AIが書いたよ」と伝えるかどうかは、相手との関係を考えてみよう。'
+  },
+  {
+    label: 'シナリオ②',
+    text: 'Claudeに作ってもらった読書感想文を、自分が書いたものとして学校に提出した。',
+    correct: 'ng',
+    reason: '❌ NG！学校の課題は「自分の思考力を育てるため」のもの。AIに全部書かせて提出するのは、自分の成長の機会を奪ってしまうことになるよ。また「自分が書いた」と偽ることは正直ではない。'
+  },
+  {
+    label: 'シナリオ③',
+    text: 'Claudeに「北九州市の観光パンフレットのアイデアを出して」と頼んで、出てきたアイデアを参考に自分でパンフレットを作った。',
+    correct: 'ok',
+    reason: '✅ OK！アイデアをもらって、自分で形にするのはとても良いAIの使い方！アイデア出し・ブレインストーミングのツールとして使うのは大歓迎です。'
+  },
+  {
+    label: 'シナリオ④',
+    text: 'ネットで見つけた有名な漫画家のイラストをAIに学習させて、そっくりな絵を大量に作って販売した。',
+    correct: 'ng',
+    reason: '❌ NG！これは著作権の侵害にあたる可能性があります。作家の許可なく作品を利用して販売することは、その人の努力や権利を傷つける行為です。AIを使っても「他の人の創作物を無断で使って儲ける」はNGです。'
+  }
+];
+
+const RULE_OPTIONS = [
+  '① AIの答えは必ずファクトチェックする',
+  '② 学校の課題はAIに全部任せず自分で考える',
+  '③ 他の人が作ったものをAIで無断コピーしない',
+  '④ 個人情報（住所・電話番号）はAIに入れない',
+  '⑤ AIが作ったものを「自分が作った」と偽らない',
+  '⑥ AIを使ったことを必要に応じて正直に伝える'
+];
+
+const STEPS = [
+  {
+    icon: '⚖️',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 1',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'AIが作ったものは誰のもの？',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">AIで文章や絵を作れる時代になった。でも、できあがったものは「誰のもの」だろう？<br>
+      そして、AIをどこまで使ってよいのだろう？</p>
+      <div class="info-box">
+        <b>📌 今日考えること：</b><br>
+        ①AIが作ったものの<b>著作権</b>（誰のもの？）<br>
+        ②AIを使うときの<b>ルール・マナー</b>（何はOKで何はNG？）<br>
+        ③<b>自分なりのルール</b>を作ろう
+      </div>
+      <p class="lesson-text">著作権とは「その人が作ったものを守る権利」のこと。小説・音楽・絵・写真——人が作ったものにはすべて著作権がある。<br>
+      AIが作った場合は？　いまも世界中で話し合いが続いているよ。</p>
+    `,
+    quiz: {
+      question: '著作権があるのはどれ？',
+      options: [
+        '自分が書いた日記',
+        '教科書に書いてある計算の公式',
+        '雨が降っているという天気の事実',
+        '「1＋1＝2」という数学の答え'
+      ],
+      answer: 0,
+      ok: '🎯 正解！自分が書いた日記は「自分が作った作品」なので著作権があるよ。公式や数字、自然現象（雨が降る）には著作権はない。「誰かが考え・表現したもの」に著作権が生まれるんだ。',
+      ng: '🤔 正解は「自分が書いた日記」！日記はきみが書いた表現だから著作権があるよ。計算の公式・数字・自然現象には著作権はない。「誰かが創造・表現したもの」に著作権が生まれるんだ。'
+    }
+  },
+
+  {
+    icon: '🎭',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: 'シナリオ判断：これはOK？NG？',
+    type: 'scenarios',
+    content: `<p class="lesson-text">4つのシナリオを読んで、「OK」か「NG」かを判断しよう。<br>答えが気になるものは特によく考えてみよう！</p>`
+  },
+
+  {
+    icon: '📋',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 3',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'じぶんのAI利用ルールを作ろう！',
+    type: 'rules',
+    content: `<p class="lesson-text">今日学んだことをもとに、<strong>「じぶんのAIルール」</strong>を3つ選んで完成させよう！</p>`
+  },
+
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: 'まとめ：AIと付き合うための3つの柱',
+    type: 'summary',
+    content: `<p class="lesson-text">AIを正しく・賢く使うための基本の考え方をまとめよう。</p>`,
+    discoveries: [
+      { text: '<b>「AIは道具」と意識する：</b>包丁は料理に使えば便利、人を傷つけるために使えば危険。AIも同じ。使い方で良いにも悪いにもなる' },
+      { text: '<b>「自分の言葉・考え」を大切にする：</b>AIに全部やらせると、自分の力が育たない。AIをアシスタントとして使い、最終的には「自分が決める」習慣を持とう' },
+      { text: '<b>「相手のことを考える」：</b>AIで作ったものを使うとき、受け取る人・作った人（原作者）への敬意を忘れない。ルールだけでなく「心」の問題でもある' }
+    ],
+    quiz: {
+      question: 'AIをもっともよく使っている状態はどれ？',
+      options: [
+        '宿題を全部AIに書かせて、自分は何も考えない',
+        'AIのアイデアを参考にしながら、最終的に自分で考え・判断して完成させる',
+        'AIを使うことを全部禁止して、自分だけで何でもやる',
+        'AIが正しいと思ったことはすべてそのまま使う'
+      ],
+      answer: 1,
+      ok: '🌟 完璧！「AIを使いながら、最終的に自分で判断する」のがベスト。AIは考えるための道具——決めるのはいつもきみだ！',
+      ng: '🤔 ちょっと違うよ！AIを使いながら「最終的に自分で考え・判断する」のがベストな使い方。道具として賢く使いつつ、決定権は自分が持とう！'
+    }
+  },
+
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：AIのルールをもっと深く考えよう',
+    type: 'challenge',
+    content: `<p class="lesson-text">ここからは<strong>チャレンジコース</strong>！<br>AIと社会のルールについて深く考えてみよう。</p>`,
+    challenges: [
+      {
+        level: '★',
+        title: 'Claudeに「AIのルール」について聞いてみよう',
+        desc: '「AIを使うときに気をつけるべきことを小学生にわかりやすく5つ教えて」とClaudeに聞いてみよう。今日学んだこととどのくらい重なる？',
+        hint: 'Claudeの答えと今日学んだことを比べてみよう。同じことが出てきた？違うことが出てきた？'
+      },
+      {
+        level: '★★',
+        title: 'AIが作った絵は誰のもの？Claudeと議論しよう',
+        desc: '「AIが生み出したイラストの著作権は誰にありますか？」とClaudeに聞いてみよう。次に「あなた（Claude）はその考えについてどう思いますか？」と追加で聞いてみよう。',
+        hint: 'AIに「あなたはどう思うか」と意見を聞いてみると、面白い答えが返ってくることがあるよ'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）AIが悪用されるリスクを考えよう',
+        desc: 'フィッシング詐欺・フェイクニュース・なりすましなど、AIが悪用されている事例をClaudeと一緒に調べてみよう。「社会として、どんな対策が必要か」を考えて、自分なりの意見をまとめよう。',
+        hint: 'キーワード：AI規制、フェイクニュース対策、AIリテラシー。Claudeに「この問題に対するあなたの意見を教えてください」と聞いてみよう'
+      }
+    ]
+  }
+];
+
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  scenarioAnswers: {},
+  selectedRules: [],
+  rulesSaved: false
+};
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson12-state') || '{}');
+  if (saved.selectedRules === undefined) saved.selectedRules = [];
+  stepState = { ...stepState, ...saved };
+  const p = new URLSearchParams(location.search);
+  const n = p.get('name');
+  if (n && !state.name) { state.name = n; saveState(); }
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson12-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro')      html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'scenarios') html += renderScenarios();
+  else if (step.type === 'rules')     html += renderRules();
+  else if (step.type === 'summary')   html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+
+function renderScenarios() {
+  const allDone = SCENARIOS.every((_, i) => stepState.scenarioAnswers[i] !== undefined);
+  let html = '';
+  SCENARIOS.forEach((sc, i) => {
+    const ans = stepState.scenarioAnswers[i];
+    const answered = ans !== undefined;
+    const isRight = answered && (ans === sc.correct);
+    html += `
+      <div class="scenario-card">
+        <div class="scenario-head">${escHtml(sc.label)}</div>
+        <div class="scenario-body">
+          <div class="scenario-text">${escHtml(sc.text)}</div>
+          <div class="scenario-btns">
+            <button class="scenario-btn scenario-btn-ok" onclick="answerScenario(${i},'ok')" ${answered ? 'disabled' : ''}>✅ OK！</button>
+            <button class="scenario-btn scenario-btn-ng" onclick="answerScenario(${i},'ng')" ${answered ? 'disabled' : ''}>❌ NG！</button>
+          </div>
+          ${answered ? `<div class="scenario-result ${sc.correct === 'ok' ? 'scenario-result-ok' : 'scenario-result-ng'}">${isRight ? '🎯 正解！' : '🤔 惜しい…'} ${escHtml(sc.reason)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  if (allDone) {
+    const score = SCENARIOS.filter((sc, i) => stepState.scenarioAnswers[i] === sc.correct).length;
+    html += `<div style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:4px">判定スコア：${score} / ${SCENARIOS.length}　${score === 4 ? '🏆 全問正解！' : score >= 3 ? '👍 よくできた！' : '💪 難しかったね！'}</div>`;
+  }
+  return html;
+}
+
+function renderRules() {
+  const sel = stepState.selectedRules;
+  const preview = sel.length >= 3
+    ? '📋 じぶんのAIルール\n\n' + sel.map((r, i) => `${i + 1}. ${r}`).join('\n')
+    : sel.length > 0
+    ? sel.map((r, i) => `${i + 1}. ${r}`).join('\n') + '\n\nあと' + (3 - sel.length) + '個選ぼう！'
+    : '← 左のルールを3つ以上選んでね！';
+
+  return `
+    <div class="rule-builder">
+      <div class="rule-builder-head">📋 ルールを選ぼう（3つ以上）</div>
+      <div class="rule-section">
+        <div class="rule-label">よいと思うルールをタップして選ぼう</div>
+        <div class="rule-chips">
+          ${RULE_OPTIONS.map((r, i) => `
+            <span class="rule-chip ${sel.includes(r) ? 'active' : ''}" onclick="toggleRule('${escHtml(r)}')">${escHtml(r)}</span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="rule-section">
+        <div class="rule-label">📄 できあがりプレビュー</div>
+        <div class="rule-preview">${escHtml(preview)}</div>
+      </div>
+    </div>
+    <button class="btn-saverule" onclick="saveRules()" ${sel.length >= 3 ? '' : 'disabled'}>
+      ${sel.length >= 3 ? '✅ このルールで決定！' : `👆 あと${Math.max(0, 3 - sel.length)}個選んでね`}
+    </button>
+    ${stepState.rulesSaved ? `<div style="text-align:center;font-size:13px;color:var(--mint);font-weight:700;margin-bottom:8px">✅ じぶんのAIルール完成！</div>` : ''}
+  `;
+}
+
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">💡 AIと付き合うための3つの柱</div><div class="discovery-items">`;
+  step.discoveries.forEach(d => { html += `<div class="discovery-item">${d.text}</div>`; });
+  html += `</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+  return html;
+}
+
+function renderChallenge(step) {
+  let html = `<div class="challenge-box"><div class="challenge-title">⭐ チャレンジミッション</div><div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div></div>`;
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const allScenarios = SCENARIOS.every((_, i) => stepState.scenarioAnswers[i] !== undefined);
+  const needQuiz     = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needScenario = step.type === 'scenarios' && !allScenarios;
+  const needRules    = step.type === 'rules' && !stepState.rulesSaved;
+  const blocked = needQuiz || needScenario || needRules;
+  const hint = needScenario ? '🎭 4つ全部判断してから進もう！' : needRules ? '📋 ルールを3つ以上選んで決定しよう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 第12回を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral);' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">⚖️</span><div class="complete-title">第12回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>AIのルールを考える力が育ったよ！</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">次は第13回「北九州の課題をAIで解決しよう」！<br>実際の社会問題にAIで向き合うよ。</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+
+function nextStep(idx) {
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState(); renderApp();
+  showToast('🎉 第12回完了！');
+}
+
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+
+function answerScenario(i, val) {
+  stepState.scenarioAnswers[i] = val;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function toggleRule(r) {
+  const idx = stepState.selectedRules.indexOf(r);
+  if (idx >= 0) { stepState.selectedRules.splice(idx, 1); }
+  else { stepState.selectedRules.push(r); }
+  stepState.rulesSaved = false;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function saveRules() {
+  if (stepState.selectedRules.length < 3) return;
+  stepState.rulesSaved = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('📋 じぶんのAIルール完成！');
+}
+
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

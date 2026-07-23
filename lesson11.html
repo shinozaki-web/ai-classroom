@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第11回：AIのウソを見破れ！ | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .halu-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 14px; }
+  .halu-head { padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .halu-head-wrong { background: #FDECEA; color: #c0392b; }
+  .halu-head-right { background: #E8FBF2; color: #085041; }
+  .halu-body { padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+  .halu-label { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-right: 6px; vertical-align: middle; }
+  .halu-label-wrong { background: #c0392b; color: white; }
+  .halu-label-right { background: #34C88A; color: white; }
+
+  .judge-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 14px; }
+  .judge-head { background: var(--sky); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .judge-body { padding: 12px 16px; }
+  .judge-ai-text { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--ink); line-height: 1.7; margin-bottom: 12px; border: 1.5px solid #E0E4F0; }
+  .judge-btns { display: flex; gap: 8px; }
+  .judge-btn { flex: 1; padding: 11px; border: none; border-radius: 10px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .judge-btn-ok { background: var(--mint-light); color: #1a7a4a; }
+  .judge-btn-ng { background: #FDECEA; color: #c0392b; }
+  .judge-btn-ok:hover { background: var(--mint); color: white; }
+  .judge-btn-ng:hover { background: #c0392b; color: white; }
+  .judge-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .judge-result { margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.6; font-weight: 700; }
+  .judge-result-right { background: var(--mint-light); color: #1a7a4a; }
+  .judge-result-wrong { background: #FDECEA; color: #c0392b; }
+  .judge-score { text-align: center; margin-top: 4px; font-size: 13px; color: var(--ink-soft); }
+
+  .discovery-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .discovery-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .discovery-items { display: flex; flex-direction: column; gap: 6px; }
+  .discovery-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; }
+  .discovery-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 16px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .challenge-text { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <button class="mypage-btn" onclick="openMypage()">🏅 マイページ</button>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="progress-bar-wrap">
+      <div class="progress-label"><span>📚 第11回のステップ</span><span id="progress-text">0 / 5 完了</span></div>
+      <div class="progress-steps" id="progress-steps"></div>
+      <div class="step-pill-label"><span>知る</span><span>比べる</span><span>判定</span><span>まとめ</span><span>チャレンジ</span></div>
+    </div>
+    <div id="lesson-container"></div>
+  </div>
+</div>
+
+<div class="mypage-overlay" id="mypage-overlay" onclick="if(event.target===this)closeMypage()">
+  <div class="mypage-sheet">
+    <div class="mypage-handle"></div>
+    <div class="mypage-name" id="mp-name"></div>
+    <div class="mypage-sub">のバッジコレクション</div>
+    <div class="badge-grid" id="mp-badge-grid"></div>
+    <div class="mypage-progress-wrap">
+      <div class="mypage-progress-label" id="mp-progress-label"></div>
+      <div class="mypage-bar-bg"><div class="mypage-bar-fill" id="mp-bar" style="width:0%"></div></div>
+    </div>
+    <button class="mypage-close" onclick="closeMypage()">とじる</button>
+  </div>
+</div>
+<div class="badge-popup-overlay" id="badge-popup-overlay">
+  <div class="badge-popup">
+    <div class="badge-popup-badge" id="bp-svg"></div>
+    <div style="font-size:28px;margin-bottom:8px">🎉</div>
+    <div class="badge-popup-title">バッジゲット！</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">やったー！</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+const LESSON_ID = 11;
+
+const JUDGE_ITEMS = [
+  {
+    label: '問題①',
+    aiSay: '門司港は明治時代から昭和初期にかけて、日本最大の国際貿易港でした。特に1900年代初頭には東京を抜いて輸出額日本一になった記録があります。',
+    correct: false,
+    explanation: '❌ 間違い！門司港は確かに重要な貿易港でしたが、「輸出額日本一」「東京を抜いた」という事実はありません。AIがもっともらしいウソをついた例です。正しくは「大陸へのアジア航路の重要拠点」として栄えました。'
+  },
+  {
+    label: '問題②',
+    aiSay: '北九州市は1963年に、門司・小倉・若松・八幡・戸畑の5市が合併して誕生した政令指定都市です。政令指定都市としては全国で初めてではなく、すでに大阪・名古屋・京都・横浜・神戸の5市が指定されていました。',
+    correct: true,
+    explanation: '✅ 正しい！北九州市は1963年2月10日に5市合併で誕生しました。政令指定都市への移行は同年4月1日。AIが正確な情報を答えた例です。'
+  },
+  {
+    label: '問題③',
+    aiSay: '北九州市の人口は約300万人で、福岡市（約160万人）よりも多く、九州最大の都市です。',
+    correct: false,
+    explanation: '❌ 間違い！実際は逆で、福岡市が九州最大（約160万人）、北九州市は約90万人です。数字が大幅に間違っています。統計情報はAIが最もよく間違えるジャンルのひとつです。'
+  }
+];
+
+const STEPS = [
+  {
+    icon: '🤔',
+    iconBg: '#FDECEA',
+    tag: 'STEP 1',
+    tagColor: '#FDECEA',
+    tagText: '#c0392b',
+    title: 'AIはウソをつく？——ハルシネーションを知ろう',
+    type: 'intro',
+    content: `
+      <p class="lesson-text">ここまでの授業で、AIがとても便利なことはわかったよね。<br>
+      でも実は、AIには大きな弱点がある。<strong>「ハルシネーション」</strong>という現象だ。</p>
+      <div class="info-box" style="background:#FDECEA;border-color:#c0392b">
+        <b>🔴 ハルシネーションとは：</b><br>
+        AIが<b>もっともらしく、でも間違った</b>情報を答えてしまうこと。<br>
+        「作り話」や「勘違い」に近い。AIは自信満々に間違える。
+      </div>
+      <p class="lesson-text">AIはデータをもとに「次にどんな言葉が来るか」を予測して文章を作っている。<br>
+      だから<strong>「確かめずに答える」</strong>ことがあるんだ。</p>
+      <div class="discovery-box">
+        <div class="discovery-title">🔍 ハルシネーションが起きやすい場面</div>
+        <div class="discovery-items">
+          <div class="discovery-item">人物の詳細な経歴・発言（実在しない引用を作ることがある）</div>
+          <div class="discovery-item">統計データ・数字（正確な数字をでっちあげることがある）</div>
+          <div class="discovery-item">最近のニュース・出来事（学習データ以降の情報はわからない）</div>
+          <div class="discovery-item">地名・固有名詞の詳細（もっともらしいウソをつきやすい）</div>
+        </div>
+      </div>
+    `,
+    quiz: {
+      question: 'ハルシネーションが怖いのはなぜ？',
+      options: [
+        'AIが難しい言葉を使うから',
+        'AIが自信満々に間違った情報を話すので、本当っぽく聞こえてしまうから',
+        'AIが答えを出すのが遅くなるから',
+        'AIが答えを断ってしまうから'
+      ],
+      answer: 1,
+      ok: '🎯 その通り！ハルシネーションが怖いのは、AIが「確信を持って」間違えるから。ためらいがないので、聞いた側が信じてしまうんだ。',
+      ng: '🤔 惜しい！ハルシネーションが怖い理由は「自信満々に間違える」から。AIの答えは全部正しいとは限らない——それが今日の一番大切なテーマだよ。'
+    }
+  },
+
+  {
+    icon: '🔍',
+    iconBg: '#EBF4FF',
+    tag: 'STEP 2',
+    tagColor: '#EBF4FF',
+    tagText: '#2563a8',
+    title: 'AIが間違えた例を見てみよう',
+    type: 'examples',
+    content: `<p class="lesson-text">実際にAIが出した「もっともらしいウソ」の例を見てみよう。<br>正しい情報と比べると、間違いがよくわかるよ！</p>`
+  },
+
+  {
+    icon: '⚖️',
+    iconBg: '#FFF8EB',
+    tag: 'STEP 3',
+    tagColor: '#FFF8EB',
+    tagText: '#b87d00',
+    title: '判定ゲーム：このAIの答え、正しい？間違い？',
+    type: 'judge',
+    content: `<p class="lesson-text">今度はきみが判定する番！<br>AIが答えた文章を読んで、<strong>正しいか・間違いか</strong>を考えてみよう。</p>`
+  },
+
+  {
+    icon: '📝',
+    iconBg: '#E8FBF2',
+    tag: 'STEP 4',
+    tagColor: '#E8FBF2',
+    tagText: '#085041',
+    title: 'まとめ：AIを使いこなす「確認の3つの掟」',
+    type: 'summary',
+    content: `<p class="lesson-text">AIの答えを鵜呑みにしないために覚えておこう！</p>`,
+    discoveries: [
+      { text: '<b>重要な情報は別の方法で確認する：</b>ニュースサイト・図書館・教科書など、AIの外の情報源でチェック' },
+      { text: '<b>数字・統計・人名は要注意：</b>「正確な数字っぽいもの」ほど間違えやすい。数字が出たら特に疑ってみよう' },
+      { text: '<b>「なんで？」と聞いてみる：</b>Claudeに「その情報の根拠は何ですか？」と追加で聞くと、間違いを自分で気づいてくれることもある' }
+    ],
+    quiz: {
+      question: 'AIの答えを信じてよいか確認したいとき、一番よい方法は？',
+      options: [
+        '同じ質問を何回も送って、同じ答えが出たら信じる',
+        'AIの答えを、別の信頼できる情報源（本・ニュースサイトなど）と照らし合わせる',
+        '長い答えのほうが信頼できるので、長い答えが出るまで聞き直す',
+        'AIは間違わないので確認する必要はない'
+      ],
+      answer: 1,
+      ok: '🌟 完璧！AIの答えは「出発点」にすぎない。本当に大切なことは、外の情報源で確かめよう。この習慣がAIを正しく使いこなす力になるよ！',
+      ng: '🤔 惜しい！同じAIに何回聞いても同じ間違いが出続けることがある。大切なのは「AIの外」で確認すること——本・ニュースサイト・図書館などを使おう！'
+    }
+  },
+
+  {
+    icon: '⭐',
+    iconBg: '#F0EEFF',
+    tag: 'STEP 5　チャレンジ',
+    tagColor: '#F0EEFF',
+    tagText: '#534AB7',
+    title: 'チャレンジ：ハルシネーションを自分でつかまえよう',
+    type: 'challenge',
+    content: `<p class="lesson-text">ここからは<strong>チャレンジコース</strong>！<br>本物のAIでハルシネーションを体験してみよう。</p>`,
+    challenges: [
+      {
+        level: '★',
+        title: '北九州に関する質問をClaudeに聞いて、正しいか確認しよう',
+        desc: '「北九州市の歴史について教えて」とClaudeに聞いて、出てきた情報を学校の図書室や市のウェブサイトで1つ確認してみよう。正しかった？間違いがあった？',
+        hint: '確認するのは全部じゃなくていい。「1つだけ」検証してみよう'
+      },
+      {
+        level: '★★',
+        title: 'Claudeに「わざと間違えさせる」質問を作ろう',
+        desc: '間違いやすそうな質問——例えば「北九州市で一番古い建物は何年に建てられましたか？」など——を考えてClaudeに聞いてみよう。出てきた答えが本当かどうか調べてみよう。',
+        hint: 'ポイントは「具体的な数字・年代・固有名詞」を聞くこと。AIが最も間違えやすい種類の質問だ'
+      },
+      {
+        level: '★★★',
+        title: '（中学生向け）なぜAIはハルシネーションを起こすのか、Claudeに聞いてみよう',
+        desc: '「あなた（Claude）はなぜ間違えることがあるのですか？仕組みを教えてください」とClaudeに聞いてみよう。AIが自分の弱点を説明できるか試してみよう。',
+        hint: 'さらに発展：「ハルシネーションを減らすために、ユーザーができることを教えてください」と続けて聞くとさらに深い答えが出るよ'
+      }
+    ]
+  }
+];
+
+let stepState = {
+  currentStep: 0,
+  completedSteps: [],
+  quizAnswered: {},
+  judgeAnswers: {},
+  checkedFact: false
+};
+
+function init() {
+  loadState();
+  const saved = JSON.parse(localStorage.getItem('lesson11-state') || '{}');
+  stepState = { ...stepState, ...saved };
+  const p = new URLSearchParams(location.search);
+  const n = p.get('name');
+  if (n && !state.name) { state.name = n; saveState(); }
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  renderApp();
+}
+
+function saveStepState() {
+  localStorage.setItem('lesson11-state', JSON.stringify(stepState));
+  if (!state.lessonCompleted) state.lessonCompleted = {};
+  if (stepState.completedSteps.length === STEPS.length) state.lessonCompleted[LESSON_ID] = true;
+  saveState();
+}
+
+function renderApp() { renderProgress(); renderStep(stepState.currentStep); }
+
+function renderProgress() {
+  const done = stepState.completedSteps.length;
+  document.getElementById('progress-text').textContent = done + ' / ' + STEPS.length + ' 完了';
+  document.getElementById('progress-steps').innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pill';
+    if (stepState.completedSteps.includes(i)) cls += ' done';
+    else if (i === stepState.currentStep) cls += ' active';
+    return `<div class="${cls}" onclick="goToStep(${i})"></div>`;
+  }).join('');
+}
+
+function goToStep(i) {
+  const max = Math.max(...stepState.completedSteps, 0);
+  if (i <= max + 1) { stepState.currentStep = i; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+
+function renderStep(idx) {
+  const step = STEPS[idx];
+  const container = document.getElementById('lesson-container');
+  let html = `<div class="lesson-card"><div class="lesson-header"><div class="lesson-icon" style="background:${step.iconBg}">${step.icon}</div><div class="lesson-meta"><span class="lesson-step-tag" style="background:${step.tagColor};color:${step.tagText}">${step.tag}</span><div class="lesson-title">${step.title}</div></div></div><div class="lesson-body">${step.content}`;
+  if (step.type === 'intro')     html += renderQuiz(step.quiz, idx);
+  else if (step.type === 'examples') html += renderExamples();
+  else if (step.type === 'judge')    html += renderJudge(idx);
+  else if (step.type === 'summary')  html += renderSummary(step, idx);
+  else if (step.type === 'challenge') html += renderChallenge(step);
+  html += renderNextBtn(idx);
+  html += `</div></div>`;
+  if (stepState.completedSteps.length === STEPS.length) html += renderCompleteCard();
+  container.innerHTML = html;
+}
+
+function renderExamples() {
+  return `
+    <div class="halu-card">
+      <div class="halu-head halu-head-wrong">❌ AIの答え（間違い）</div>
+      <div class="halu-body">「門司港のバナナのたたき売りは、1890年代にバナナを輸入した際に船内で腐らせてしまった業者が、損害を取り戻すために始めた行商です。明治33年に最初の記録があります。」</div>
+    </div>
+    <div class="halu-card">
+      <div class="halu-head halu-head-right">✅ 正しい情報</div>
+      <div class="halu-body">バナナのたたき売りは門司港発祥とされていますが、「船内で腐らせた」「明治33年」という具体的な年の記述は根拠がありません。AIが「もっともらしく聞こえる背景話」を作り上げた例です。</div>
+    </div>
+
+    <div class="halu-card">
+      <div class="halu-head halu-head-wrong">❌ AIの答え（間違い）</div>
+      <div class="halu-body">「北九州市の年間観光客数は約2,800万人で、長崎市（約1,400万人）のほぼ2倍に上ります。」</div>
+    </div>
+    <div class="halu-card">
+      <div class="halu-head halu-head-right">✅ 正しい情報</div>
+      <div class="halu-body">実際の北九州市の観光客数はこの数字とは大きく異なります。AIが「それらしい数字」を自信満々に出した例。統計データはAIが最もウソをつきやすいジャンルです。</div>
+    </div>
+
+    <div class="discovery-box">
+      <div class="discovery-title">🔍 間違いの共通点</div>
+      <div class="discovery-items">
+        <div class="discovery-item">どちらも「本当っぽい理由や数字」がついている</div>
+        <div class="discovery-item">AIはためらいなく、自信満々に話している</div>
+        <div class="discovery-item">聞いただけでは「間違い」と気づきにくい</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderJudge(stepIdx) {
+  const allAnswered = JUDGE_ITEMS.every((_, i) => stepState.judgeAnswers[i] !== undefined);
+  const score = JUDGE_ITEMS.filter((item, i) => stepState.judgeAnswers[i] === item.correct).length;
+  let html = '';
+  JUDGE_ITEMS.forEach((item, i) => {
+    const ans = stepState.judgeAnswers[i];
+    const answered = ans !== undefined;
+    const isRight = answered && (ans === item.correct);
+    html += `
+      <div class="judge-card">
+        <div class="judge-head">${escHtml(item.label)} <span style="font-size:11px;font-weight:400">このAIの答えはどっち？</span></div>
+        <div class="judge-body">
+          <div class="judge-ai-text">${escHtml(item.aiSay)}</div>
+          <div class="judge-btns">
+            <button class="judge-btn judge-btn-ok" onclick="judgeAnswer(${i},true)" ${answered ? 'disabled' : ''}>✅ 正しい</button>
+            <button class="judge-btn judge-btn-ng" onclick="judgeAnswer(${i},false)" ${answered ? 'disabled' : ''}>❌ 間違い</button>
+          </div>
+          ${answered ? `<div class="judge-result ${isRight ? 'judge-result-right' : 'judge-result-wrong'}">${isRight ? '🎯 正解！' : '🤔 残念…'} ${escHtml(item.explanation)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  if (allAnswered) {
+    html += `<div class="judge-score">判定スコア：${score} / ${JUDGE_ITEMS.length}　${score === 3 ? '🏆 パーフェクト！' : score === 2 ? '👍 よくできた！' : '💪 練習しよう！'}</div>`;
+  }
+  return html;
+}
+
+function renderSummary(step, idx) {
+  let html = `<div class="discovery-box"><div class="discovery-title">🔑 確認の3つの掟</div><div class="discovery-items">`;
+  step.discoveries.forEach(d => { html += `<div class="discovery-item">${d.text}</div>`; });
+  html += `</div></div>`;
+  html += renderQuiz(step.quiz, idx);
+
+  if (!stepState.checkedFact) {
+    html += `
+      <div style="background:var(--sky-light);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;color:var(--sky-dark);margin-bottom:8px">🔬 ファクトチェックを体験しよう</div>
+        <div style="font-size:13px;color:var(--ink-mid);line-height:1.7;margin-bottom:10px">「北九州市の人口について教えてください」とClaudeに聞いて、出てきた数字を<br>北九州市のウェブサイトで確かめてみよう！</div>
+        <button class="btn-next" style="background:var(--sky);margin-bottom:0" onclick="startFactCheck()">🚀 Claudeに聞きに行く</button>
+      </div>
+    `;
+  } else {
+    html += `<div style="text-align:center;font-size:13px;color:var(--mint);font-weight:700;margin-bottom:12px">✅ ファクトチェック体験完了！</div>`;
+  }
+  return html;
+}
+
+function renderChallenge(step) {
+  let html = `<div class="challenge-box"><div class="challenge-title">⭐ チャレンジミッション</div><div class="challenge-text">小学生はどれか1つ、中学生は全部やってみよう！</div></div>`;
+  step.challenges.forEach(c => {
+    html += `
+      <div class="mission-box" style="margin-bottom:10px">
+        <div class="mission-title">${c.level} ${escHtml(c.title)}</div>
+        <div class="mission-text">${escHtml(c.desc)}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ink-soft)">💬 ${escHtml(c.hint)}</div>
+        <div class="hint-chips" style="margin-top:10px"><span class="hint-chip" onclick="openClaude()">🚀 Claudeを開く</span></div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderQuiz(quiz, stepIdx) {
+  if (!quiz) return '';
+  const answered = stepState.quizAnswered[stepIdx];
+  let html = `<div style="margin-bottom:16px"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">❓ クイズ：${escHtml(quiz.question)}</div><div class="quiz-options">`;
+  quiz.options.forEach((opt, oi) => {
+    let cls = 'quiz-opt';
+    if (answered !== undefined) { if (oi === quiz.answer) cls += ' correct'; else if (oi === answered) cls += ' wrong'; }
+    html += `<button class="${cls}" onclick="answerQuiz(${stepIdx},${oi})" ${answered !== undefined ? 'disabled' : ''}>${escHtml(opt)}</button>`;
+  });
+  html += '</div>';
+  if (answered !== undefined) { const ok = answered === quiz.answer; html += `<div class="quiz-feedback show ${ok ? 'ok' : 'ng'}">${ok ? quiz.ok : quiz.ng}</div>`; }
+  html += '</div>';
+  return html;
+}
+
+function renderNextBtn(idx) {
+  const step = STEPS[idx], isLast = idx === STEPS.length - 1, isCompleted = stepState.completedSteps.includes(idx);
+  const allJudged = JUDGE_ITEMS.every((_, i) => stepState.judgeAnswers[i] !== undefined);
+  const needQuiz   = step.quiz && stepState.quizAnswered[idx] === undefined;
+  const needJudge  = step.type === 'judge' && !allJudged;
+  const needFact   = step.type === 'summary' && !stepState.checkedFact;
+  const blocked = needQuiz || needJudge || needFact;
+  const hint = needJudge ? '⚖️ 3問全部判定してから進もう！' : needFact ? '🔬 まずファクトチェックを体験しよう！' : needQuiz ? '❓ クイズに答えてから進もう！' : isLast ? '🏆 第11回を完了する！' : '次のステップへ ➡️';
+  const action = isLast ? 'completeLesson()' : `nextStep(${idx})`;
+  if (isCompleted && !isLast) return `<button class="btn-next" onclick="nextStep(${idx})">次のステップへ ➡️</button>`;
+  if (isCompleted && isLast) return '';
+  return `<button class="btn-next" style="${isLast ? 'background:var(--coral);' : ''}" onclick="${blocked ? '' : action}" ${blocked ? 'disabled' : ''}>${hint}</button>`;
+}
+
+function renderCompleteCard() {
+  return `<div class="complete-card"><span class="complete-emoji">🔍</span><div class="complete-title">第11回クリア！</div><div class="complete-sub">${escHtml(state.name || '')}さん、お疲れさま！<br>AIのウソを見破る目が育ったよ！</div><div class="stars"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div><div style="font-size:14px;color:var(--ink-soft);line-height:1.7;margin-bottom:20px">次は第12回「AIの使い方のルール」で<br>著作権や倫理について考えよう！</div><a href="index.html" class="btn-next" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">🏠 トップにもどる</a></div>`;
+}
+
+function nextStep(idx) {
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  stepState.currentStep = idx + 1;
+  saveStepState(); renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('✅ ステップ ' + (idx + 1) + ' クリア！');
+}
+
+function completeLesson() {
+  const idx = STEPS.length - 1;
+  if (!stepState.completedSteps.includes(idx)) stepState.completedSteps.push(idx);
+  state.lessonCompleted = state.lessonCompleted || {};
+  state.lessonCompleted[LESSON_ID] = true;
+  saveStepState(); renderApp();
+  showToast('🎉 第11回完了！');
+}
+
+function answerQuiz(stepIdx, optIdx) { stepState.quizAnswered[stepIdx] = optIdx; saveStepState(); renderStep(stepIdx); }
+
+function judgeAnswer(qi, val) {
+  stepState.judgeAnswers[qi] = val;
+  saveStepState(); renderStep(stepState.currentStep);
+}
+
+function startFactCheck() {
+  window.open('https://claude.ai/new', '_blank');
+  navigator.clipboard.writeText('北九州市の人口について教えてください。').catch(() => {});
+  stepState.checkedFact = true;
+  saveStepState(); renderStep(stepState.currentStep);
+  showToast('🚀 Claudeが開いたよ！数字を北九州市のサイトで確認してみよう！');
+}
+
+function openClaude() { window.open('https://claude.ai/new', '_blank'); showToast('🚀 Claudeを開いたよ！'); }
+function escHtml(str) { return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>
