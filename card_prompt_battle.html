@@ -290,7 +290,7 @@ function init() {
     const idx = parseInt(forced) - 1;
     if (ODAI[idx]) {
       document.getElementById('teacher-banner').style.display = 'block';
-      document.getElementById('teacher-banner').innerHTML = `👩‍🏫 先生から指定されたカード（No.${forced}）です`;
+      document.getElementById('teacher-banner').innerHTML = `👩‍🏫 先生から指定されたカード（No.${idx + 1}）です`;
       showOdai(idx);
       return;
     }
