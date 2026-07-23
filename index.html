@@ -213,52 +213,16 @@
 <div class="top-hero">
   <div class="top-title">🤖 門司港プログラミング教室<br>AI授業へようこそ！</div>
 
-  <!-- 登録フォーム（初回） -->
+  <!-- ログインフォーム -->
   <div class="reg-card" id="reg-card">
-    <div class="reg-card-title">📝 はじめに登録しよう！</div>
-
+    <div class="reg-card-title">🔑 ログインしよう！</div>
     <div class="reg-field">
-      <div class="reg-label">👤 なまえ（ニックネームでもOK）</div>
-      <input class="reg-input" id="name-input" type="text" placeholder="例：たろう" maxlength="20"
-        onkeydown="if(event.key==='Enter')register()">
+      <div class="reg-label">ログインID <span class="reg-optional">（先生からもらった番号を入力してね）</span></div>
+      <input class="reg-input" id="student-id-input" type="text" placeholder="例：LAM-001" maxlength="20"
+        style="text-transform:uppercase;letter-spacing:0.05em"
+        onkeydown="if(event.key==='Enter')loginWithId()">
     </div>
-
-    <div class="reg-field">
-      <div class="reg-label">📚 学年を選んでね</div>
-      <div class="reg-chips" id="grade-chips">
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="小学4年生">小4</span>
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="小学5年生">小5</span>
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="小学6年生">小6</span>
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="中学1年生">中1</span>
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="中学2年生">中2</span>
-        <span class="reg-chip" onclick="selectChip(this,'grade')" data-val="中学3年生">中3</span>
-      </div>
-    </div>
-
-    <div class="reg-field">
-      <div class="reg-label">📍 住んでる区を選んでね</div>
-      <div class="reg-chips" id="ward-chips">
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="門司区">門司区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="小倉北区">小倉北区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="小倉南区">小倉南区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="八幡東区">八幡東区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="八幡西区">八幡西区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="戸畑区">戸畑区</span>
-        <span class="reg-chip" onclick="selectChip(this,'ward')" data-val="若松区">若松区</span>
-      </div>
-    </div>
-
-    <div class="reg-field">
-      <div class="reg-label">🏫 クラスコード <span class="reg-optional">（先生に聞いてね・なければ空白でOK）</span></div>
-      <input class="reg-input" id="class-input" type="text" placeholder="例：MOJIKO-A" maxlength="20">
-    </div>
-
-    <button class="btn-register" onclick="register()">決定 🚀</button>
-    <button class="restore-toggle-btn" onclick="toggleRestoreArea()">📥 以前のデータをコードで復元する</button>
-    <div id="restore-area" class="restore-area" style="display:none">
-      <textarea class="restore-textarea" id="restore-input" placeholder="保存コードをここに貼り付けてね"></textarea>
-      <button class="btn-restore" onclick="doRestore()">このコードで復元する ✅</button>
-    </div>
+    <button class="btn-register" onclick="loginWithId()">入る 🚀</button>
   </div>
 
   <!-- 登録済みプロフィール -->
@@ -438,43 +402,43 @@ const ALL_LESSONS = [
 const BLOCK_NAMES = {1:'ブロック①　AIと仲良くなる', 2:'ブロック②　AIと一緒に作る', 3:'ブロック③　AIを問い直す'};
 const AVAILABLE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-// ===== 登録処理 =====
-let _selectedGrade = '';
-let _selectedWard  = '';
+// ===== ログイン処理 =====
+async function loginWithId() {
+  const sid = document.getElementById('student-id-input').value.trim().toUpperCase();
+  if (!sid) { showToast('ログインIDを入力してね！'); return; }
 
-function selectChip(el, group) {
-  document.querySelectorAll('#' + group + '-chips .reg-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  if (group === 'grade') _selectedGrade = el.dataset.val;
-  if (group === 'ward')  _selectedWard  = el.dataset.val;
-}
+  showToast('⏳ 確認中...');
+  await _waitForSb();
+  if (!_sb) { showToast('通信エラー。ページを再読み込みしてね'); return; }
 
-function register() {
-  const name = document.getElementById('name-input').value.trim();
-  if (!name)           { showToast('なまえを入力してね！'); return; }
-  if (!_selectedGrade) { showToast('学年を選んでね！'); return; }
-  if (!_selectedWard)  { showToast('住んでる区を選んでね！'); return; }
+  const { data: student, error } = await _sb.from('students').select('*').eq('student_id', sid).maybeSingle();
+  if (error || !student) {
+    showToast('❌ IDが見つかりません。先生に確認してね');
+    return;
+  }
 
-  state.name      = name;
-  state.grade     = _selectedGrade;
-  state.ward      = _selectedWard;
-  state.classCode = document.getElementById('class-input').value.trim() || 'なし';
+  state.studentId = sid;
+  state.name      = student.name;
+  state.grade     = student.grade || '';
+  state.ward      = student.ward  || '';
+  state.classCode = student.class_code || '';
+
+  const { data: progress } = await _sb.from('student_progress')
+    .select('*').eq('name', student.name).eq('class_code', student.class_code).maybeSingle();
+  if (progress) {
+    state.lessonCompleted = progress.lesson_completed || {};
+    state.seenBadges      = progress.seen_badges || [];
+  }
+
   saveState();
-
-  document.getElementById('header-name').textContent = name + 'さん';
+  document.getElementById('header-name').textContent = student.name + 'さん';
   showProfile();
-  showToast('✅ ' + name + 'さんで登録したよ！');
+  showToast('✅ ' + student.name + 'さんでログインしたよ！');
   renderAll();
 }
 
 function showRegForm() {
-  // 既存値をチップとフォームに復元
-  _selectedGrade = state.grade || '';
-  _selectedWard  = state.ward  || '';
-  document.getElementById('name-input').value = state.name || '';
-  document.getElementById('class-input').value = (state.classCode && state.classCode !== 'なし') ? state.classCode : '';
-  document.querySelectorAll('#grade-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedGrade));
-  document.querySelectorAll('#ward-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedWard));
+  document.getElementById('student-id-input').value = state.studentId || '';
   document.getElementById('reg-card').style.display = 'block';
   document.getElementById('profile-card').style.display = 'none';
 }
@@ -484,7 +448,7 @@ function showProfile() {
   document.getElementById('profile-card').style.display = 'flex';
   document.getElementById('profile-name-display').textContent = state.name + 'さん';
   const parts = [state.grade, state.ward];
-  if (state.classCode && state.classCode !== 'なし') parts.push('クラス：' + state.classCode);
+  if (state.classCode) parts.push('クラス：' + state.classCode);
   document.getElementById('profile-meta-display').textContent = parts.filter(Boolean).join('　');
 }
 
@@ -567,21 +531,14 @@ function renderLessons() {
 
 // ===== BOOT =====
 loadState();
-_selectedGrade = state.grade || '';
-_selectedWard  = state.ward  || '';
 
 if (state.name) {
-  // 登録済み（名前があればOK・学年/区は任意）
   document.getElementById('header-name').textContent = state.name + 'さん';
   showProfile();
 } else {
-  // 未登録 → フォームを出す（既存値があれば復元）
-  if (state.classCode && state.classCode !== 'なし') document.getElementById('class-input').value = state.classCode;
-  document.querySelectorAll('#grade-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedGrade));
-  document.querySelectorAll('#ward-chips .reg-chip').forEach(c => c.classList.toggle('active', c.dataset.val === _selectedWard));
+  document.getElementById('reg-card').style.display = 'block';
 }
 renderAll();
-if (state.name) document.getElementById('save-code-btn').style.display = 'block';
 
 // ===== 保存コード =====
 function generateSaveCode() {

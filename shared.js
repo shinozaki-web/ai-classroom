@@ -56,6 +56,7 @@ const BADGES = [
 
 // ===== STATE =====
 let state = {
+  studentId: '',
   name: '',
   grade: '',
   ward: '',
@@ -83,28 +84,36 @@ function saveState() {
 }
 
 async function startApp() {
-  const name = document.getElementById('name-input').value.trim();
-  const classCode = document.getElementById('class-input').value.trim();
-  if (!name) { showToast('なまえを入力してね！'); return; }
-  state.name = name;
-  state.classCode = classCode || 'クラスなし';
+  const inputEl = document.getElementById('student-id-input') || document.getElementById('name-input');
+  if (!inputEl) return;
+  const sid = inputEl.value.trim().toUpperCase();
+  if (!sid) { showToast('ログインIDを入力してね！'); return; }
+
+  showToast('⏳ 確認中...');
+  await _waitForSb();
+  if (!_sb) { showToast('通信エラー。少し待ってからもう一度試してね'); return; }
+
+  const { data: student } = await _sb.from('students').select('*').eq('student_id', sid).maybeSingle();
+  if (!student) { showToast('❌ IDが見つかりません。先生に確認してね'); return; }
+
+  state.studentId = sid;
+  state.name = student.name;
+  state.grade = student.grade || '';
+  state.ward = student.ward || '';
+  state.classCode = student.class_code || '';
+
+  const { data: progress } = await _sb.from('student_progress')
+    .select('*').eq('name', student.name).eq('class_code', student.class_code).maybeSingle();
+  if (progress) {
+    state.lessonCompleted = progress.lesson_completed || {};
+    state.seenBadges = progress.seen_badges || [];
+  }
+
   saveState();
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
-  document.getElementById('header-name').textContent = name + 'さん';
-  renderApp();
-  if (classCode && classCode !== 'クラスなし') {
-    const existing = await syncFromSupabase(name, classCode);
-    if (existing && Object.keys(existing.lesson_completed || {}).length > 0) {
-      state.lessonCompleted = existing.lesson_completed;
-      state.seenBadges = existing.seen_badges || [];
-      if (existing.grade) state.grade = existing.grade;
-      if (existing.ward) state.ward = existing.ward;
-      saveState();
-      if (typeof renderApp === 'function') renderApp();
-      showToast('☁️ クラウドから進捗を復元しました！');
-    }
-  }
+  document.getElementById('header-name').textContent = student.name + 'さん';
+  if (typeof renderApp === 'function') renderApp();
 }
 
 

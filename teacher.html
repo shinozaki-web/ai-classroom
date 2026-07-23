@@ -348,16 +348,46 @@
       <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均完了授業数</div></div>
     </div>
 
+    <!-- STUDENT ACCOUNTS -->
+    <div class="section">
+      <div class="section-title">🧑‍🎓 生徒アカウント管理</div>
+      <div class="new-class-form" style="flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div>
+          <label class="input-label">IDプレフィックス</label>
+          <input class="input-field" id="new-sid-prefix" value="LAM" maxlength="10" style="width:110px">
+        </div>
+        <div>
+          <label class="input-label">名前</label>
+          <input class="input-field" id="new-sid-name" placeholder="例：山田たろう" maxlength="20" style="width:160px">
+        </div>
+        <div>
+          <label class="input-label">クラスコード</label>
+          <input class="input-field" id="new-sid-class" placeholder="例：MOJIKO-A" maxlength="20" style="width:150px">
+        </div>
+        <div>
+          <label class="input-label">学年</label>
+          <select class="input-field" id="new-sid-grade" style="width:110px">
+            <option value="">なし</option>
+            <option>小学4年生</option><option>小学5年生</option><option>小学6年生</option>
+            <option>中学1年生</option><option>中学2年生</option><option>中学3年生</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">区</label>
+          <select class="input-field" id="new-sid-ward" style="width:110px">
+            <option value="">なし</option>
+            <option>門司区</option><option>小倉北区</option><option>小倉南区</option>
+            <option>八幡東区</option><option>八幡西区</option><option>戸畑区</option><option>若松区</option>
+          </select>
+        </div>
+        <button class="btn-add" onclick="createStudent()">＋ ID発行</button>
+      </div>
+      <div id="students-list" style="margin-top:16px"></div>
+    </div>
+
     <!-- CLASS MANAGEMENT -->
     <div class="section">
       <div class="section-title">📋 クラス管理</div>
-      <div class="new-class-form">
-        <div style="flex:1;min-width:180px">
-          <label class="input-label" style="margin-bottom:6px">新しいクラスコードを作成</label>
-          <input class="input-field" id="new-class-input" placeholder="例：MOJIKO-2024A" maxlength="20">
-        </div>
-        <button class="btn-add" onclick="addClass()">＋ クラスを追加</button>
-      </div>
       <div id="classes-container"></div>
     </div>
 
@@ -381,6 +411,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let allStudents = [];
+let studentAccounts = [];
 let realtimeChannel = null;
 const LESSON_LABELS = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14'];
 const ACTIVE_MINUTES = 5;
@@ -409,12 +440,105 @@ function logout() {
 
 // ===== DATA =====
 async function loadDashboard() {
-  const { data, error } = await sb.from('student_progress')
-    .select('*')
-    .order('last_seen', { ascending: false });
-  if (error) { showToast('データ取得エラー: ' + error.message); return; }
-  allStudents = data || [];
+  const [progressRes, accountsRes] = await Promise.all([
+    sb.from('student_progress').select('*').order('last_seen', { ascending: false }),
+    sb.from('students').select('*').order('created_at', { ascending: true })
+  ]);
+  if (progressRes.error) { showToast('データ取得エラー: ' + progressRes.error.message); return; }
+  allStudents = progressRes.data || [];
+  studentAccounts = accountsRes.data || [];
   renderAll();
+  renderStudentAccounts();
+}
+
+// ===== STUDENT ACCOUNT MANAGEMENT =====
+async function createStudent() {
+  const prefix    = (document.getElementById('new-sid-prefix').value.trim() || 'LAM').toUpperCase();
+  const name      = document.getElementById('new-sid-name').value.trim();
+  const classCode = document.getElementById('new-sid-class').value.trim().toUpperCase();
+  const grade     = document.getElementById('new-sid-grade').value;
+  const ward      = document.getElementById('new-sid-ward').value;
+
+  if (!name)      { showToast('名前を入力してください'); return; }
+  if (!classCode) { showToast('クラスコードを入力してください'); return; }
+
+  const existing = studentAccounts.filter(s => s.student_id.startsWith(prefix + '-'));
+  const nums = existing.map(s => parseInt(s.student_id.replace(prefix + '-', '')) || 0);
+  const next = (nums.length ? Math.max(...nums) : 0) + 1;
+  const sid = prefix + '-' + String(next).padStart(3, '0');
+
+  const { error } = await sb.from('students').insert({ student_id: sid, name, class_code: classCode, grade, ward });
+  if (error) { showToast('エラー: ' + error.message); return; }
+
+  document.getElementById('new-sid-name').value = '';
+  showToast('✅ ' + name + 'さんのID: ' + sid);
+  loadDashboard();
+}
+
+async function deleteStudent(sid) {
+  if (!confirm(sid + ' を削除しますか？')) return;
+  await sb.from('students').delete().eq('student_id', sid);
+  showToast('🗑️ 削除しました');
+  loadDashboard();
+}
+
+function renderStudentAccounts() {
+  const container = document.getElementById('students-list');
+  if (!studentAccounts.length) {
+    container.innerHTML = '<div class="empty-state">まだアカウントがありません。上のフォームから発行してください。</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="student-table">
+      <thead>
+        <tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th><th>区</th><th></th></tr>
+      </thead>
+      <tbody>
+        ${studentAccounts.map(s => `
+          <tr>
+            <td>
+              <code style="font-size:15px;font-weight:800;color:#2563eb;letter-spacing:0.04em">${esc(s.student_id)}</code>
+              <button class="btn-copy" onclick="copyCode('${esc(s.student_id)}')" style="margin-left:6px">コピー</button>
+            </td>
+            <td class="student-name">${esc(s.name)}</td>
+            <td>${esc(s.class_code)}</td>
+            <td>${esc(s.grade || '-')}</td>
+            <td>${esc(s.ward || '-')}</td>
+            <td>
+              <button class="btn-copy" style="background:#fff0ee;color:#c04040"
+                onclick="deleteStudent('${esc(s.student_id)}')">削除</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>
+    <button onclick="printIds()" style="margin-top:14px;padding:10px 22px;background:var(--sky);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700">🖨️ ID一覧を印刷する</button>
+  `;
+}
+
+function printIds() {
+  const win = window.open('', '_blank');
+  const rows = studentAccounts.map(s =>
+    `<tr><td style="font-size:18px;font-weight:bold;letter-spacing:0.05em">${s.student_id}</td><td>${s.name}</td><td>${s.class_code}</td><td>${s.grade||''}</td></tr>`
+  ).join('');
+  win.document.write(`<!DOCTYPE html><html><head><title>ログインID一覧</title>
+    <style>
+      body{font-family:sans-serif;padding:24px;max-width:700px;margin:0 auto}
+      h2{margin-bottom:4px}p{color:#666;margin-bottom:16px;font-size:13px}
+      table{border-collapse:collapse;width:100%}
+      td,th{border:1px solid #ccc;padding:10px 14px;text-align:left}
+      th{background:#f5f5f5;font-size:13px}
+      @media print{button{display:none}}
+    </style></head><body>
+    <h2>🔑 AI教室 ログインID一覧</h2>
+    <p>URL: <strong>https://shinozaki-web.github.io/ai-classroom/</strong>　※IDを入力してログインしてください</p>
+    <table><thead><tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <script>setTimeout(()=>window.print(),300)</script>
+    </body></html>`);
+  win.document.close();
 }
 
 function subscribeRealtime() {
