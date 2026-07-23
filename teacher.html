@@ -233,6 +233,7 @@
   .status-done { background: var(--mint-light); color: #1a7a4a; }
   .status-mid { background: var(--amber-light); color: #b07000; }
   .status-start { background: #F1EFE8; color: #888; }
+  .status-active { background: #dcfce7; color: #15803d; font-weight: 700; }
 
   /* NEW CLASS */
   .new-class-form {
@@ -342,8 +343,8 @@
     <!-- STATS -->
     <div class="stats-grid" id="stats-grid">
       <div class="stat-card"><div class="stat-num" id="s-students">0</div><div class="stat-label">生徒数（合計）</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-classes">0</div><div class="stat-label">クラス数</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-completed">0</div><div class="stat-label">授業完了者</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-active" style="color:#22c55e">0</div><div class="stat-label">🟢 授業中（5分以内）</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-completed">0</div><div class="stat-label">全14回 完了者</div></div>
       <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均完了授業数</div></div>
     </div>
 
@@ -372,10 +373,19 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.min.js" integrity="sha384-Tve8O+C6PBzsIMK/IRCwHbi8fyEzXIlIs6OfVBZHubplwYhaQF/4Mzxqgg+pp/oy" crossorigin="anonymous"></script>
 <script>
 const TEACHER_PW = 'lam2024';
-let teacherClasses = [];
+const SB_URL = 'https://rpvgmvkuvowjbpzrqanh.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwdmdtdmt1dm93amJwenJxYW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3ODQwNzgsImV4cCI6MjEwMDM2MDA3OH0.EJbySeLOgotZWBfsTnoKbLoabNPq2X4o8tkiYTElMt4';
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
+let allStudents = [];
+let realtimeChannel = null;
+const LESSON_LABELS = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14'];
+const ACTIVE_MINUTES = 5;
+
+// ===== AUTH =====
 function doLogin() {
   const pw = document.getElementById('pw-input').value;
   if (pw === TEACHER_PW) {
@@ -383,6 +393,7 @@ function doLogin() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard-screen').style.display = 'block';
     loadDashboard();
+    subscribeRealtime();
   } else {
     showToast('パスワードが違います');
     document.getElementById('pw-input').value = '';
@@ -391,56 +402,74 @@ function doLogin() {
 
 function logout() {
   sessionStorage.removeItem('teacher-auth');
+  if (realtimeChannel) sb.removeChannel(realtimeChannel);
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('dashboard-screen').style.display = 'none';
 }
 
-function loadDashboard() {
-  teacherClasses = JSON.parse(localStorage.getItem('ai-classroom-classes') || '["MOJIKO-2024A","MOJIKO-2024B"]');
-  const teacherData = JSON.parse(localStorage.getItem('ai-classroom-teacher') || '{}');
-  renderStats(teacherData);
-  renderClasses(teacherClasses, teacherData);
-  renderAllStudents(teacherData);
+// ===== DATA =====
+async function loadDashboard() {
+  const { data, error } = await sb.from('student_progress')
+    .select('*')
+    .order('last_seen', { ascending: false });
+  if (error) { showToast('データ取得エラー: ' + error.message); return; }
+  allStudents = data || [];
+  renderAll();
 }
 
-function renderStats(data) {
-  let total = 0, completed = 0, stepSum = 0;
-  Object.values(data).forEach(cls => {
-    Object.values(cls).forEach(s => {
-      total++;
-      const lessonDone = Object.values(s.lessonCompleted||{}).filter(Boolean).length;
-      if (lessonDone >= 4) completed++;
-      stepSum += lessonDone;
-    });
-  });
+function subscribeRealtime() {
+  realtimeChannel = sb.channel('teacher-dashboard')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' },
+      () => loadDashboard())
+    .subscribe();
+}
+
+// ===== RENDER =====
+function renderAll() {
+  renderStats();
+  renderClasses();
+  renderAllStudentsTable();
+}
+
+function isActive(s) {
+  if (!s.last_seen) return false;
+  return (Date.now() - new Date(s.last_seen).getTime()) < ACTIVE_MINUTES * 60 * 1000;
+}
+
+function renderStats() {
+  const total = allStudents.length;
+  const active = allStudents.filter(isActive).length;
+  const completed = allStudents.filter(s => Object.values(s.lesson_completed||{}).filter(Boolean).length >= 14).length;
+  const avgSum = allStudents.reduce((sum, s) => sum + Object.values(s.lesson_completed||{}).filter(Boolean).length, 0);
   document.getElementById('s-students').textContent = total;
-  document.getElementById('s-classes').textContent = teacherClasses.length;
+  document.getElementById('s-active').textContent = active;
   document.getElementById('s-completed').textContent = completed;
-  document.getElementById('s-avg').textContent = total ? (stepSum/total).toFixed(1) : '0';
+  document.getElementById('s-avg').textContent = total ? (avgSum/total).toFixed(1) : '0';
 }
 
-function renderClasses(classes, data) {
+function renderClasses() {
+  const codes = [...new Set(allStudents.map(s => s.class_code).filter(Boolean))].sort();
   const container = document.getElementById('classes-container');
-  if (!classes.length) {
-    container.innerHTML = '<div class="empty-state">クラスがまだありません。<br>上のフォームからクラスコードを作成してください。</div>';
+  if (!codes.length) {
+    container.innerHTML = '<div class="empty-state">まだ生徒データがありません。生徒が登録すると自動でクラスが表示されます。</div>';
     return;
   }
-  container.innerHTML = classes.map(code => {
-    const students = data[code] ? Object.values(data[code]) : [];
+  container.innerHTML = codes.map(code => {
+    const students = allStudents.filter(s => s.class_code === code);
+    const activeCount = students.filter(isActive).length;
     return `
       <div class="class-card">
-        <div class="class-card-header" onclick="toggleClass('cc-${code}', this)">
+        <div class="class-card-header" onclick="toggleClass('cc-${esc(code)}', this)">
           <div>
             <div class="class-code">${esc(code)}</div>
-            <div class="class-meta">${students.length}名 参加</div>
+            <div class="class-meta">${students.length}名参加${activeCount ? ' &nbsp;🟢 ' + activeCount + '名 授業中' : ''}</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn-copy" onclick="event.stopPropagation();copyCode('${esc(code)}')">コードをコピー</button>
-            <button class="btn-copy" style="background:#fff0ee;color:#c04040" onclick="event.stopPropagation();deleteClass('${esc(code)}')">削除</button>
-            <span class="class-toggle" id="toggle-${code}">▼</span>
+            <span class="class-toggle" id="toggle-${esc(code)}">▼</span>
           </div>
         </div>
-        <div id="cc-${code}" style="display:none">
+        <div id="cc-${esc(code)}" style="display:none">
           ${students.length ? renderStudentTable(students) : '<div class="empty-state">まだ生徒が参加していません。</div>'}
         </div>
       </div>
@@ -448,126 +477,111 @@ function renderClasses(classes, data) {
   }).join('');
 }
 
+function lessonBubbles(lc) {
+  return LESSON_LABELS.map(i =>
+    `<div class="step-bubble ${lc[i] ? 'done' : ''}">${i}</div>`
+  ).join('');
+}
+
 function renderStudentTable(students) {
   return `
+    <div style="overflow-x:auto">
     <table class="student-table">
       <thead>
         <tr>
           <th>なまえ</th>
-          <th>授業完了（第1〜4回）</th>
-          <th>会話数</th>
+          <th>学年・区</th>
+          <th style="min-width:320px">授業の進み具合（第1〜14回）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
       </thead>
       <tbody>
         ${students.map(s => {
-          const lc = s.lessonCompleted || {};
-          const lessonDone = Object.values(lc).filter(Boolean).length;
-          const chats = (s.chatCounts||[]).reduce((a,b)=>a+b,0);
-          const status = lessonDone >= 4 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
-          const statusLabel = lessonDone >= 4 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
-          const last = s.lastSeen ? timeAgo(s.lastSeen) : '-';
+          const lc = s.lesson_completed || {};
+          const done = Object.values(lc).filter(Boolean).length;
+          const active = isActive(s);
+          const status = active ? 'active' : done >= 14 ? 'done' : done > 0 ? 'mid' : 'start';
+          const statusLabel = active ? '🟢 授業中' : done >= 14 ? '完了 🎉' : done > 0 ? '進行中' : '未開始';
           return `
-            <tr>
+            <tr ${active ? 'style="background:#f0fff4"' : ''}>
               <td class="student-name">${esc(s.name||'-')}</td>
-              <td><div class="step-bubbles">${[1,2,3,4].map(i=>`<div class="step-bubble ${!!lc[i]?'done':''}">${i}</div>`).join('')}</div></td>
-              <td>${chats}</td>
+              <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
+              <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
-              <td class="last-seen">${last}</td>
+              <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
           `;
         }).join('')}
       </tbody>
     </table>
+    </div>
   `;
 }
 
-function renderAllStudents(data) {
-  const allStudents = [];
-  Object.entries(data).forEach(([code, cls]) => {
-    Object.values(cls).forEach(s => allStudents.push({...s, classCode: code}));
-  });
-
+function renderAllStudentsTable() {
   const container = document.getElementById('all-students-table');
   if (!allStudents.length) {
     container.innerHTML = '<div class="empty-state">まだ生徒データがありません。<br>生徒が学習を始めると、ここに表示されます。</div>';
     return;
   }
-  allStudents.sort((a,b) => (b.lastSeen||0) - (a.lastSeen||0));
   container.innerHTML = `
+    <div style="overflow-x:auto">
     <table class="student-table">
       <thead>
         <tr>
           <th>なまえ</th>
           <th>クラス</th>
-          <th>授業完了（第1〜4回）</th>
+          <th>学年・区</th>
+          <th style="min-width:320px">授業の進み具合（第1〜14回）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
       </thead>
       <tbody>
         ${allStudents.map(s => {
-          const lc = s.lessonCompleted || {};
-          const lessonDone = Object.values(lc).filter(Boolean).length;
-          const status = lessonDone >= 4 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
-          const statusLabel = lessonDone >= 4 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
+          const lc = s.lesson_completed || {};
+          const done = Object.values(lc).filter(Boolean).length;
+          const active = isActive(s);
+          const status = active ? 'active' : done >= 14 ? 'done' : done > 0 ? 'mid' : 'start';
+          const statusLabel = active ? '🟢 授業中' : done >= 14 ? '完了 🎉' : done > 0 ? '進行中' : '未開始';
           return `
-            <tr>
+            <tr ${active ? 'style="background:#f0fff4"' : ''}>
               <td class="student-name">${esc(s.name||'-')}</td>
-              <td><span class="btn-copy" style="cursor:default">${esc(s.classCode||'-')}</span></td>
-              <td><div class="step-bubbles">${[1,2,3,4].map(i=>`<div class="step-bubble ${!!lc[i]?'done':''}">${i}</div>`).join('')}</div></td>
+              <td><span class="btn-copy" style="cursor:default">${esc(s.class_code||'-')}</span></td>
+              <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
+              <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
-              <td class="last-seen">${s.lastSeen ? timeAgo(s.lastSeen) : '-'}</td>
+              <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
           `;
         }).join('')}
       </tbody>
     </table>
+    </div>
   `;
 }
 
-function toggleClass(id, header) {
+// ===== HELPERS =====
+function toggleClass(id, _header) {
   const el = document.getElementById(id);
   const code = id.replace('cc-', '');
   const tog = document.getElementById('toggle-' + code);
   if (el.style.display === 'none') {
     el.style.display = 'block';
-    tog.classList.add('open');
+    if (tog) tog.classList.add('open');
   } else {
     el.style.display = 'none';
-    tog.classList.remove('open');
+    if (tog) tog.classList.remove('open');
   }
-}
-
-function addClass() {
-  const code = document.getElementById('new-class-input').value.trim().toUpperCase();
-  if (!code) { showToast('クラスコードを入力してね'); return; }
-  if (teacherClasses.includes(code)) { showToast('すでに存在するコードです'); return; }
-  teacherClasses.push(code);
-  localStorage.setItem('ai-classroom-classes', JSON.stringify(teacherClasses));
-  document.getElementById('new-class-input').value = '';
-  loadDashboard();
-  showToast('✅ クラス ' + code + ' を追加しました');
-}
-
-function deleteClass(code) {
-  if (!confirm(code + ' を削除しますか？生徒データも消えます。')) return;
-  teacherClasses = teacherClasses.filter(c => c !== code);
-  localStorage.setItem('ai-classroom-classes', JSON.stringify(teacherClasses));
-  const data = JSON.parse(localStorage.getItem('ai-classroom-teacher') || '{}');
-  delete data[code];
-  localStorage.setItem('ai-classroom-teacher', JSON.stringify(data));
-  loadDashboard();
-  showToast('🗑️ 削除しました');
 }
 
 function copyCode(code) {
   navigator.clipboard.writeText(code).then(() => showToast('📋 ' + code + ' をコピーしました'));
 }
 
-function timeAgo(ts) {
-  const m = Math.floor((Date.now() - ts) / 60000);
+function timeAgo(isoStr) {
+  const m = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
   if (m < 1) return 'たった今';
   if (m < 60) return m + '分前';
   const h = Math.floor(m / 60);
@@ -586,14 +600,17 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Auto-refresh every 30s
-setInterval(() => { if (document.getElementById('dashboard-screen').style.display !== 'none') loadDashboard(); }, 30000);
+// "クラス管理" section no longer needed for adding/deleting — classes auto-appear from Supabase
+// Keep addClass wired to avoid errors if old HTML calls it
+function addClass() { showToast('クラスは生徒の登録時に自動作成されます'); }
+function deleteClass() { showToast('Supabase管理画面からデータを削除してください'); }
 
 // Boot
 if (sessionStorage.getItem('teacher-auth') === '1') {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
   loadDashboard();
+  subscribeRealtime();
 }
 </script>
 </body>

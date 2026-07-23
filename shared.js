@@ -79,24 +79,10 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem('ai-classroom-state', JSON.stringify(state));
-  // Send summary to teacher store
-  const teacherData = JSON.parse(localStorage.getItem('ai-classroom-teacher') || '{}');
-  if (state.classCode) {
-    if (!teacherData[state.classCode]) teacherData[state.classCode] = {};
-    teacherData[state.classCode][state.name] = {
-      name: state.name,
-      grade: state.grade || '',
-      ward: state.ward || '',
-      completedSteps: state.completedSteps,
-      lessonCompleted: state.lessonCompleted || {},
-      chatCounts: state.chatCounts,
-      lastSeen: Date.now()
-    };
-    localStorage.setItem('ai-classroom-teacher', JSON.stringify(teacherData));
-  }
+  syncToSupabase();
 }
 
-function startApp() {
+async function startApp() {
   const name = document.getElementById('name-input').value.trim();
   const classCode = document.getElementById('class-input').value.trim();
   if (!name) { showToast('なまえを入力してね！'); return; }
@@ -107,6 +93,18 @@ function startApp() {
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('header-name').textContent = name + 'さん';
   renderApp();
+  if (classCode && classCode !== 'クラスなし') {
+    const existing = await syncFromSupabase(name, classCode);
+    if (existing && Object.keys(existing.lesson_completed || {}).length > 0) {
+      state.lessonCompleted = existing.lesson_completed;
+      state.seenBadges = existing.seen_badges || [];
+      if (existing.grade) state.grade = existing.grade;
+      if (existing.ward) state.ward = existing.ward;
+      saveState();
+      if (typeof renderApp === 'function') renderApp();
+      showToast('☁️ クラウドから進捗を復元しました！');
+    }
+  }
 }
 
 
@@ -207,5 +205,57 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// ===== SUPABASE SYNC =====
+const _SB_URL = 'https://rpvgmvkuvowjbpzrqanh.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwdmdtdmt1dm93amJwenJxYW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3ODQwNzgsImV4cCI6MjEwMDM2MDA3OH0.EJbySeLOgotZWBfsTnoKbLoabNPq2X4o8tkiYTElMt4';
+let _sb = null;
+
+(function() {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.min.js';
+  s.integrity = 'sha384-Tve8O+C6PBzsIMK/IRCwHbi8fyEzXIlIs6OfVBZHubplwYhaQF/4Mzxqgg+pp/oy';
+  s.crossOrigin = 'anonymous';
+  s.onload = () => { _sb = window.supabase.createClient(_SB_URL, _SB_KEY); };
+  document.head.appendChild(s);
+})();
+
+function _waitForSb(ms) {
+  ms = ms || 4000;
+  return new Promise(function(r) {
+    if (_sb) return r();
+    const t0 = Date.now();
+    const id = setInterval(function() { if (_sb || Date.now()-t0 > ms) { clearInterval(id); r(); } }, 100);
+  });
+}
+
+async function syncToSupabase() {
+  if (!_sb || !state.name || !state.classCode || state.classCode === 'クラスなし') return;
+  try {
+    await _sb.from('student_progress').upsert({
+      name: state.name,
+      class_code: state.classCode,
+      grade: state.grade || '',
+      ward: state.ward || '',
+      lesson_completed: state.lessonCompleted || {},
+      seen_badges: state.seenBadges || [],
+      last_seen: new Date().toISOString()
+    }, { onConflict: 'name,class_code' });
+  } catch(e) { /* silent */ }
+}
+
+async function syncFromSupabase(name, classCode) {
+  await _waitForSb();
+  if (!_sb) return null;
+  try {
+    const { data } = await _sb.from('student_progress')
+      .select('*').eq('name', name).eq('class_code', classCode).maybeSingle();
+    return data;
+  } catch(e) { return null; }
+}
+
+setInterval(function() {
+  if (state.name && state.classCode && state.classCode !== 'クラスなし') syncToSupabase();
+}, 120000);
 
 // ===== BOOT =====
