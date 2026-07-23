@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎙️ AIにインタビューしよう | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #34C88A 0%, #2563a8 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .variant-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .variant-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .variant-chip:hover { border-color: var(--mint); background: var(--mint-light); }
+  .variant-chip.active { background: var(--mint); color: white; border-color: var(--mint); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-box-head { background: var(--mint); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 14px 16px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; min-height: 80px; }
+  .prompt-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--mint); background: var(--mint-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--mint); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-open:hover { background: #27a674; }
+
+  .tips-box { background: var(--mint-light); border: 2px solid var(--mint); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: #085041; margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+
+  .warning-box { background: #FFF8EB; border: 2px solid var(--amber); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #b87d00; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🎙️</div>
+      <div class="card-hero-title">AIにインタビューしよう</div>
+      <div class="card-hero-desc">AIに「役割」を与えると、歴史上の人物や<br>架空のプロにインタビューできる！</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🎭 役割付与</span>
+        <span class="card-tag">📚 歴史</span>
+        <span class="card-tag">💬 対話</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+
+        <div class="warning-box">
+          ⚠️ AIが演じる「歴史上の人物」の答えは、実際の発言や考えとは違う場合があります。<br>「AIが想像した答え」として楽しもう！重要なことは別途調べよう。
+        </div>
+
+        <p class="lesson-text">誰にインタビューしたい？タイプを選んでプロンプトを送ろう！</p>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① インタビュー相手を選ぼう</div>
+        <div class="variant-row" id="variant-row"></div>
+
+        <div class="prompt-box">
+          <div class="prompt-box-head">
+            📋 プロンプト
+            <span id="variant-label" style="font-size:11px;font-weight:400;opacity:0.85"></span>
+          </div>
+          <div class="prompt-box-body">
+            <div class="prompt-text" id="prompt-text">← 上からタイプを選んでね！</div>
+            <div class="prompt-hint" id="prompt-hint"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-copy" onclick="copyPrompt()">📋 コピー</button>
+          <button class="btn-open" onclick="openClaude()">🚀 Claudeで試す</button>
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-title">🔑 インタビューのコツ</div>
+          <div class="tip-item">役割を設定した後、「では最初の質問です：」のように会話を続けることができる</div>
+          <div class="tip-item">「もっと詳しく教えてください」「子どもにもわかるように説明してください」と追加で聞ける</div>
+          <div class="tip-item">「あなたが一番後悔していることは？」「現代社会について一言」のような深い質問も試してみよう</div>
+          <div class="tip-item">インタビューが終わったら「この人物から学べることを3つまとめて」と頼むと振り返りになる</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ もっとやってみよう</div>
+          <div class="challenge-item">🔶 同じ質問を「違う人物」に聞いてみよう。答えの違いを比べると面白い発見がある</div>
+          <div class="challenge-item">🔶 インタビューした内容を「雑誌記事風」にまとめてもらおう</div>
+          <div class="challenge-item">🔷 「インタビューした人物が現代に生きていたら北九州で何をしていると思うか」を聞いてみよう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const VARIANTS = [
+  {
+    label: '📜 歴史上の人物',
+    prompt: `あなたは今から「[人物名]」という歴史上の人物を演じてください。
+
+その人物として、以下の設定で答えてください：
+・話し方：その時代・地域らしい雰囲気で、でも現代の日本語で
+・知識：その人物が生きていた時代の知識を持つ（未来のことは知らない）
+・性格：その人物の歴史的な性格・エピソードをもとに
+
+まず「[人物名]です。よろしくお願いします」と自己紹介してから、私の質問に答えてください。
+
+最初の質問：あなたが生涯で最も大切にしていたことは何ですか？
+
+「[人物名]」に聞きたい歴史上の人物を入れよう！`,
+    hint: '「坂本龍馬」「卑弥呼」「聖徳太子」「野口英世」などの日本史上の人物がおすすめ！'
+  },
+  {
+    label: '💼 プロ・専門家',
+    prompt: `あなたは「[職業・専門分野]」の超一流プロフェッショナルです。
+
+設定：
+・経験年数：30年以上
+・専門知識：その分野の最新情報まで把握している
+・話し方：小学生〜中学生にもわかりやすく説明できる
+
+以下の質問に答えてください：
+
+①「[職業]」になるために、一番大事なことは何ですか？
+②「[職業]」の仕事で、一番嬉しい瞬間はいつですか？
+③「[職業]」をやっていてよかったと思う理由を教えてください。
+④ 今の子どもたちへのアドバイスを一言。
+
+「[職業・専門分野]」に聞きたい職業を入れてね！`,
+    hint: '「料理人」「宇宙飛行士」「AIエンジニア」「漁師」「医師」「ゲームデザイナー」など！'
+  },
+  {
+    label: '🚀 未来人',
+    prompt: `あなたは2080年の未来から来た[年齢]歳の人物です。
+
+設定：
+・現在（2080年）の世界：AIが人間と協力して社会を動かしている時代
+・出身地：北九州市（未来の北九州）
+・職業：[職業を書いてね]
+
+以下の質問に答えてください：
+①「2080年の北九州市はどんな街ですか？」
+②「2024年〜2025年頃（私が生きている時代）と比べて何が一番変わりましたか？」
+③「今の時代の子どもたちが、未来のために今からやるべきことは？」
+④「AIは未来の世界でどんな役割を果たしていますか？」
+
+「[年齢]」と「[職業]」を自由に決めて送ってね！`,
+    hint: '「30歳の宇宙パイロット」「40歳の環境科学者」など。未来の北九州がどんな街か想像しよう！'
+  },
+  {
+    label: '🐉 架空のキャラ',
+    prompt: `あなたは「[キャラクター名・作品名]」のキャラクターを演じてください。
+
+ただし、著作権の関係で実際のセリフや設定を使わず、そのキャラクターの「性格・口調・価値観」だけを参考に、オリジナルの答えを考えてください。
+
+私の質問に答えてください：
+①「一番大切にしていることは何ですか？」
+②「北九州市に来たとしたら何をしますか？」
+③「あなたの一番の強みと弱みを教えてください」
+
+「[キャラクター名・作品名]」に好きなキャラを入れよう！`,
+    hint: '好きなゲーム・アニメ・漫画のキャラでOK！AIの想像で作ったオリジナルの答えが返ってくる'
+  }
+];
+
+let selected = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const row = document.getElementById('variant-row');
+  row.innerHTML = VARIANTS.map((v, i) => `<span class="variant-chip" onclick="selectVariant(${i})">${v.label}</span>`).join('');
+}
+
+function selectVariant(i) {
+  selected = i;
+  document.querySelectorAll('.variant-chip').forEach((c, ci) => c.classList.toggle('active', ci === i));
+  document.getElementById('variant-label').textContent = VARIANTS[i].label;
+  document.getElementById('prompt-text').textContent = VARIANTS[i].prompt;
+  document.getElementById('prompt-hint').textContent = '💬 ' + VARIANTS[i].hint;
+}
+
+function copyPrompt() {
+  if (selected === null) { showToast('まずタイプを選んでね！'); return; }
+  navigator.clipboard.writeText(VARIANTS[selected].prompt).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openClaude() {
+  if (selected !== null) navigator.clipboard.writeText(VARIANTS[selected].prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

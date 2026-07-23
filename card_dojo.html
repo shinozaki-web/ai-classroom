@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🥋 プロンプト道場 | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #3B2F7A 0%, #7C6FE0 60%, #F26B5B 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .rank-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .rank-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 12px; cursor: pointer; transition: all 0.15s; }
+  .rank-chip:hover { border-color: var(--purple); background: var(--purple-light); }
+  .rank-chip.active { background: var(--purple); color: white; border-color: var(--purple); }
+  .rank-chip .rank-badge { font-size: 18px; display: block; }
+  .rank-chip .rank-name { font-size: 11px; }
+
+  .technique-area { display: none; }
+  .technique-area.show { display: block; }
+  .technique-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tech-tab { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .tech-tab:hover { border-color: var(--purple); background: var(--purple-light); }
+  .tech-tab.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-box-head { background: var(--purple); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 14px 16px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; min-height: 80px; }
+  .prompt-explain { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; background: var(--purple-light); border-radius: 8px; padding: 8px 10px; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--purple); background: var(--purple-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-open:hover { background: #534AB7; }
+
+  .tips-box { background: var(--purple-light); border: 2px solid var(--purple); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "🥋"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed var(--coral); border-radius: 14px; padding: 14px 16px; background: var(--coral-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--coral); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+
+  .start-hint { text-align: center; padding: 30px 20px; color: var(--ink-soft); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🥋</div>
+      <div class="card-hero-title">プロンプト道場</div>
+      <div class="card-hero-desc">AIへの伝え方を鍛えよう！<br>白帯→黒帯まで、プロンプトの技を身につけよう。</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">💬 プロンプト</span>
+        <span class="card-tag">⬆️ スキルアップ</span>
+        <span class="card-tag">🧠 AI思考力</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <p class="lesson-text">段位を選んで、その段位の「技」をClaudeで試してみよう！</p>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① 今日の段位を選ぼう</div>
+        <div class="rank-row" id="rank-row"></div>
+
+        <div id="technique-area" class="technique-area">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">② 技を選ぼう</div>
+          <div class="technique-tabs" id="tech-tabs"></div>
+
+          <div class="prompt-box">
+            <div class="prompt-box-head">
+              📋 プロンプト例
+              <span id="tech-label" style="font-size:11px;font-weight:400;opacity:0.85"></span>
+            </div>
+            <div class="prompt-box-body">
+              <div class="prompt-text" id="prompt-text">← 上から技を選んでね！</div>
+              <div class="prompt-explain" id="prompt-explain" style="display:none"></div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-copy" onclick="copyPrompt()">📋 コピー</button>
+            <button class="btn-open" onclick="openClaude()">🚀 Claudeで試す</button>
+          </div>
+        </div>
+
+        <div id="start-hint" class="start-hint">⬆️ まず段位を選んでね！</div>
+
+        <div class="tips-box">
+          <div class="tips-title">道場の心得</div>
+          <div class="tip-item">プロンプトをコピーして、自分なりに変えて試してみよう</div>
+          <div class="tip-item">同じ技でも「テーマ」を変えると全然違う結果になる</div>
+          <div class="tip-item">うまくいかなかったら「もっとわかりやすく」とClaudeに伝えよう</div>
+          <div class="tip-item">気に入った技は「自分の定番プロンプト」としてメモしておこう</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ 道場最終試練</div>
+          <div class="challenge-item">🔶 白帯・緑帯・黒帯の技を1つずつ組み合わせた「最強プロンプト」を自分で作ってみよう</div>
+          <div class="challenge-item">🔶 作ったプロンプトをクラスで発表して、みんなに試してもらおう</div>
+          <div class="challenge-item">🔷 授業で一番役立つと思うプロンプトを考えて「AI活用マニュアル」を作ろう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const RANKS = [
+  {
+    emoji: '🤍',
+    name: '白帯',
+    desc: '基礎から',
+    techniques: [
+      {
+        name: '詳しく聞く',
+        label: '🔍 詳しく聞く',
+        prompt: `「[知りたいこと]」について、小学生にもわかるように説明してください。
+
+・むずかしい言葉は使わずに
+・例を1つ使って
+・200文字くらいで
+
+「[知りたいこと]」に聞きたいことを入れよう！`,
+        explain: '【白帯の技①】シンプルに「わかりやすく」を付けるだけで答えの質が大きく変わる。「小学生向け」「例を使って」「○文字で」の3つが基本セット。'
+      },
+      {
+        name: '比べる',
+        label: '⚖️ 比べる',
+        prompt: `「[AとBを入れよう]」の違いを教えてください。
+
+表形式で：
+・似ているところ
+・違うところ（3つ以上）
+・どっちがオススメかと理由
+
+「[AとB]」に比べたい2つのものを入れよう！`,
+        explain: '【白帯の技②】「比べて」と頼むと、両方の特徴を整理して見せてくれる。表でまとめるよう頼むとさらに見やすくなる。'
+      },
+      {
+        name: '例を出す',
+        label: '💡 例を出す',
+        prompt: `「[学んでいること]」について、身近な例で3つ説明してください。
+
+・日常生活で体験できる例
+・「もし〇〇だったら」という例え話
+・北九州で見られる例（あれば）
+
+「[学んでいること]」に学校や教室で学んでいることを入れよう！`,
+        explain: '【白帯の技③】「例を出して」と頼むと難しい概念が身近になる。「北九州の例で」など場所を指定するとさらに理解しやすくなる。'
+      }
+    ]
+  },
+  {
+    emoji: '💚',
+    name: '緑帯',
+    desc: '中級テク',
+    techniques: [
+      {
+        name: '役割を与える',
+        label: '🎭 役割を与える',
+        prompt: `あなたは「[職業や役割]」です。その立場から「[テーマ]」について教えてください。
+
+・その職業の人が普段使う言葉で
+・実際の仕事の経験談を交えて
+・子どもでも理解できるように
+
+「[職業]」に「料理人」「科学者」「消防士」など、「[テーマ]」に聞きたいことを入れよう！`,
+        explain: '【緑帯の技①】「あなたは〇〇です」という設定を与えると、その専門家の視点から答えてくれる。同じ質問でも職業を変えると全然違う答えが返ってくる！'
+      },
+      {
+        name: '段階的に教える',
+        label: '📶 ステップ解説',
+        prompt: `「[やりたいこと]」を5ステップで教えてください。
+
+各ステップ：
+・ステップ名（わかりやすい言葉で）
+・やること（1〜2文）
+・よくある失敗とその防ぎ方
+
+最後に「完成したらどうやって確認するか」も教えてください。
+
+「[やりたいこと]」に作りたいものややりたいことを入れよう！`,
+        explain: '【緑帯の技②】「ステップで」と頼むと手順が明確になる。「よくある失敗」を追加すると、つまずきポイントも先に教えてもらえる。'
+      },
+      {
+        name: 'フォーマット指定',
+        label: '📋 形式を指定する',
+        prompt: `「[テーマ]」についてまとめてください。
+
+出力形式：
+# タイトル
+## 1. 概要（3行）
+## 2. 重要ポイント（箇条書き5つ）
+## 3. 注意すること（箇条書き3つ）
+## 4. まとめ（2行）
+
+「[テーマ]」に調べたいことを入れよう！`,
+        explain: '【緑帯の技③】出力形式を「#見出し」「箇条書き」のように指定すると、読みやすいレポート形式で返ってくる。コピーしてそのまま使えることも！'
+      }
+    ]
+  },
+  {
+    emoji: '🖤',
+    name: '黒帯',
+    desc: '上級技',
+    techniques: [
+      {
+        name: '批判的に考える',
+        label: '🔄 反対意見も聞く',
+        prompt: `「[意見やアイデア]」について、賛成意見と反対意見の両方を教えてください。
+
+【賛成派の主な理由】（3つ）
+【反対派の主な理由】（3つ）
+【中立の立場からの分析】（2〜3文）
+【あなた（Claude）はどう考えるか、その理由は？】
+
+「[意見やアイデア]」に自分が考えたアイデアや主張を入れよう！`,
+        explain: '【黒帯の技①】「両方の意見を聞く」ことで、自分の考えの穴に気づける。最後にClaudeの意見も求めることで、ディベートの練習にもなる。'
+      },
+      {
+        name: 'ソクラテス式',
+        label: '🧐 質問で深める',
+        prompt: `私は「[テーマ]」について考えたいと思っています。
+
+あなたはソクラテスのように、答えを教えるのではなく、私が自分で考えられるように「質問」をしてください。
+
+・最初に「まず〇〇について、あなたはどう思いますか？」と聞く
+・私が答えたら、さらに深い質問をする
+・最終的に私が自分の考えを持てるように導く
+
+「[テーマ]」に深く考えたいことを入れよう！`,
+        explain: '【黒帯の技②】AIに「答えを教えて」ではなく「質問して」と頼む上級テクニック。自分の考えを深めたいときに最強。'
+      },
+      {
+        name: '自分で修正させる',
+        label: '✏️ 自己修正させる',
+        prompt: `私が書いた文章を改善してください。
+
+【私の文章】
+[ここに自分の書いた文章を貼り付けよう]
+
+以下の点でフィードバックしてください：
+① 良い点（具体的に2つ）
+② 改善できる点（具体的に2つ）
+③ 改善後の文章（実際に書き直して）
+④ 今後意識するポイント（1つ）
+
+厳しく、でも優しくお願いします！`,
+        explain: '【黒帯の技③】自分の作品をAIに「批評→改善」してもらうテクニック。「良い点も必ず言って」と加えると、モチベーションを保ちながら改善できる。'
+      }
+    ]
+  }
+];
+
+let currentRank = null;
+let currentTech = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const row = document.getElementById('rank-row');
+  row.innerHTML = RANKS.map((r, i) => `
+    <div class="rank-chip" onclick="selectRank(${i})">
+      <span class="rank-badge">${r.emoji}</span>
+      <span class="rank-name">${r.name}・${r.desc}</span>
+    </div>
+  `).join('');
+}
+
+function selectRank(i) {
+  currentRank = i;
+  currentTech = null;
+  document.querySelectorAll('.rank-chip').forEach((c, ci) => c.classList.toggle('active', ci === i));
+  const area = document.getElementById('technique-area');
+  const hint = document.getElementById('start-hint');
+  area.classList.add('show');
+  hint.style.display = 'none';
+
+  const tabs = document.getElementById('tech-tabs');
+  tabs.innerHTML = RANKS[i].techniques.map((t, ti) =>
+    `<span class="tech-tab" onclick="selectTech(${ti})">${t.label}</span>`
+  ).join('');
+
+  document.getElementById('prompt-text').textContent = '← 上から技を選んでね！';
+  document.getElementById('prompt-explain').style.display = 'none';
+  document.getElementById('tech-label').textContent = '';
+}
+
+function selectTech(ti) {
+  currentTech = ti;
+  document.querySelectorAll('.tech-tab').forEach((c, ci) => c.classList.toggle('active', ci === ti));
+  const tech = RANKS[currentRank].techniques[ti];
+  document.getElementById('tech-label').textContent = tech.label;
+  document.getElementById('prompt-text').textContent = tech.prompt;
+  const exp = document.getElementById('prompt-explain');
+  exp.textContent = tech.explain;
+  exp.style.display = 'block';
+}
+
+function copyPrompt() {
+  if (currentTech === null) { showToast('まず技を選んでね！'); return; }
+  const text = RANKS[currentRank].techniques[currentTech].prompt;
+  navigator.clipboard.writeText(text).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openClaude() {
+  if (currentTech !== null) {
+    navigator.clipboard.writeText(RANKS[currentRank].techniques[currentTech].prompt).catch(() => {});
+  }
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

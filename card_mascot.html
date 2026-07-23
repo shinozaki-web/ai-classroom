@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 架空のゆるキャラを作ろう | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #F5A623 0%, #F26B5B 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .variant-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .variant-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .variant-chip:hover { border-color: var(--amber); background: var(--amber-light); }
+  .variant-chip.active { background: var(--amber); color: white; border-color: var(--amber); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-box-head { background: var(--amber); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 14px 16px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; min-height: 80px; }
+  .prompt-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--amber); background: var(--amber-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--amber); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-open:hover { background: #d48a00; }
+
+  .tips-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🐾</div>
+      <div class="card-hero-title">架空のゆるキャラを作ろう</div>
+      <div class="card-hero-desc">北九州に新しいゆるキャラを誕生させよう！<br>名前・外見・性格・必殺技まで全部AIと一緒に作る。</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🎨 デザイン</span>
+        <span class="card-tag">✏️ 創作</span>
+        <span class="card-tag">🏙️ 北九州</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <p class="lesson-text">どんなゆるキャラを作りたい？タイプを選んでプロンプトをClaudeに送ろう！</p>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① キャラのタイプを選ぼう</div>
+        <div class="variant-row" id="variant-row"></div>
+
+        <div class="prompt-box">
+          <div class="prompt-box-head">
+            📋 プロンプト
+            <span id="variant-label" style="font-size:11px;font-weight:400;opacity:0.85"></span>
+          </div>
+          <div class="prompt-box-body">
+            <div class="prompt-text" id="prompt-text">← 上からタイプを選んでね！</div>
+            <div class="prompt-hint" id="prompt-hint"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-copy" onclick="copyPrompt()">📋 コピー</button>
+          <button class="btn-open" onclick="openClaude()">🚀 Claudeで試す</button>
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-title">🔑 ゆるキャラ作りのコツ</div>
+          <div class="tip-item">「ていたん・じーも・ヤハタン・すなQ」のように、地名や地元の特産品が名前のヒントになりやすい</div>
+          <div class="tip-item">「見た目の特徴を3つ」「性格を2〜3つ」を具体的に指定すると、個性が出やすい</div>
+          <div class="tip-item">Claudeに「このキャラの好きな食べ物は？」「苦手なことは？」と追加で聞くと深みが出る</div>
+          <div class="tip-item">完成したら「このキャラを紹介する1分スピーチを作って」と頼んでみよう</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ もっとやってみよう</div>
+          <div class="challenge-item">🔶 同じテーマで「ライバルキャラ」も作ってみよう。2キャラの対立設定を考えると物語が生まれる</div>
+          <div class="challenge-item">🔶 作ったキャラのグッズ（Tシャツ・シール・お菓子）のデザインアイデアを考えてもらおう</div>
+          <div class="challenge-item">🔷 キャラクターの「着ぐるみを作るとしたら予算はいくら？」をClaudeに調べてもらおう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const VARIANTS = [
+  {
+    label: '🏙️ 北九州キャラ',
+    prompt: `北九州市の新しいゆるキャラを考えてください。
+
+テーマ：[北九州の特徴を1つ書いてね　例：製鉄・環境・港・焼きうどん]
+
+以下の項目を全部考えてください：
+① キャラクター名（読み仮名付き）
+② 見た目の特徴（3つ以上）
+③ 性格（2〜3つ）
+④ 好きなこと・得意なこと
+⑤ 必殺技・決めゼリフ
+⑥ どの区のキャラかと、その区との関係
+⑦ このキャラが生まれた背景ストーリー（3文）`,
+    hint: '「[テーマ]」に「製鉄」「洞海湾」「焼きうどん」など北九州らしいものを入れよう'
+  },
+  {
+    label: '🍜 食べ物キャラ',
+    prompt: `[食べ物の名前]をモチーフにしたゆるキャラを考えてください。
+
+以下の項目を全部考えてください：
+① キャラクター名（その食べ物にちなんだ名前）
+② 見た目（その食べ物の形・色を活かした外見）
+③ 性格と口癖
+④ 得意な魔法・技（食べ物の特徴を活かして）
+⑤ 天敵・苦手なもの（食べ物のNG組み合わせをヒントに）
+⑥ そのキャラが住んでいる世界の説明（2文）
+⑦ 仲間キャラ（同じ料理ジャンルから1キャラ）
+
+「[食べ物の名前]」には好きな食べ物を入れよう！`,
+    hint: '「ラーメン」「唐揚げ」「バナナ」「焼きうどん」など何でもOK！身近な食べ物ほど面白くなりやすい'
+  },
+  {
+    label: '🚢 乗り物キャラ',
+    prompt: `[乗り物の種類]をモチーフにしたゆるキャラを考えてください。
+
+条件：
+・北九州・門司港ゆかりの乗り物だとなお良い（例：フェリー・モノレール・SL）
+・子どもに人気が出そうなかっこいい・かわいいデザイン
+
+以下を考えてください：
+① キャラクター名と読み方
+② 見た目（乗り物の特徴を擬人化）
+③ 特殊能力（乗り物の機能を活かした力）
+④ 性格と口癖
+⑤ ライバルと仲間のキャラ
+⑥ テーマソングの歌詞（1番だけ）
+
+「[乗り物の種類]」を書いて送ってね！`,
+    hint: '「フェリー」「新幹線」「飛行機」「自転車」「宇宙船」など何でもOK！'
+  },
+  {
+    label: '💼 職業キャラ',
+    prompt: `[職業]をテーマにしたゆるキャラを考えてください。
+
+目的：その職業の魅力や大切さを子どもに伝えるキャラクター
+
+以下を全部考えてください：
+① キャラクター名（職業にちなんだ名前）
+② 外見（その職業の仕事道具や服装を活かしたデザイン）
+③ その職業の大切な仕事をキャラの「技」として表現（3つ）
+④ 口癖（その職業らしい言い回し）
+⑤ このキャラと出会えたら子どもにどんなよいことがある？
+⑥ そのキャラが主人公の絵本タイトル案（3つ）`,
+    hint: '「消防士」「料理人」「宇宙飛行士」「プログラマー」「漁師」など。なりたい職業でも面白い！'
+  }
+];
+
+let selected = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const row = document.getElementById('variant-row');
+  row.innerHTML = VARIANTS.map((v, i) => `<span class="variant-chip" onclick="selectVariant(${i})">${v.label}</span>`).join('');
+}
+
+function selectVariant(i) {
+  selected = i;
+  document.querySelectorAll('.variant-chip').forEach((c, ci) => c.classList.toggle('active', ci === i));
+  document.getElementById('variant-label').textContent = VARIANTS[i].label;
+  document.getElementById('prompt-text').textContent = VARIANTS[i].prompt;
+  document.getElementById('prompt-hint').textContent = '💬 ' + VARIANTS[i].hint;
+}
+
+function copyPrompt() {
+  if (selected === null) { showToast('まずタイプを選んでね！'); return; }
+  navigator.clipboard.writeText(VARIANTS[selected].prompt).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openClaude() {
+  if (selected !== null) navigator.clipboard.writeText(VARIANTS[selected].prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

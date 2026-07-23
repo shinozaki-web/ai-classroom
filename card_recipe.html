@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍳 レシピ本を作ろう | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #F26B5B 0%, #F5A623 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .variant-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .variant-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .variant-chip:hover { border-color: var(--coral); background: var(--coral-light); }
+  .variant-chip.active { background: var(--coral); color: white; border-color: var(--coral); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-box-head { background: var(--coral); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 14px 16px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; min-height: 80px; }
+  .prompt-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--coral); background: var(--coral-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--coral); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-open:hover { background: #c0392b; }
+
+  .tips-box { background: var(--coral-light); border: 2px solid var(--coral); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: #c0392b; margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🍳</div>
+      <div class="card-hero-title">レシピ本を作ろう</div>
+      <div class="card-hero-desc">テーマを決めて、オリジナルのレシピ本を作ろう！<br>北九州グルメ・世界料理・創作料理——何でもOK。</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🍜 料理</span>
+        <span class="card-tag">✏️ 創作</span>
+        <span class="card-tag">🏙️ 地域</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <p class="lesson-text">どんなレシピ本を作りたい？テーマを選んでプロンプトを送ろう！</p>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① テーマを選ぼう</div>
+        <div class="variant-row" id="variant-row"></div>
+
+        <div class="prompt-box">
+          <div class="prompt-box-head">
+            📋 プロンプト
+            <span id="variant-label" style="font-size:11px;font-weight:400;opacity:0.85"></span>
+          </div>
+          <div class="prompt-box-body">
+            <div class="prompt-text" id="prompt-text">← 上からテーマを選んでね！</div>
+            <div class="prompt-hint" id="prompt-hint"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-copy" onclick="copyPrompt()">📋 コピー</button>
+          <button class="btn-open" onclick="openClaude()">🚀 Claudeで試す</button>
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-title">🔑 レシピ本作りのコツ</div>
+          <div class="tip-item">「小学生でも作れる難易度で」と加えると、家で本当に作れるレシピになる</div>
+          <div class="tip-item">「アレルギーを考えて卵・乳製品なしで」のように制約をつけると本格的になる</div>
+          <div class="tip-item">できたレシピを「もっと美味しくするアレンジを教えて」と深掘りできる</div>
+          <div class="tip-item">「このレシピの料理を写真で見たい」とClaudeに聞くと、どんな見た目かも説明してくれる</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ もっとやってみよう</div>
+          <div class="challenge-item">🔶 実際に家で1つ作ってみよう！「親に頼む説明文も書いて」とClaudeに頼むと、保護者への説明も作れる</div>
+          <div class="challenge-item">🔶 レシピ本の「まえがき」と「表紙のデザインアイデア」もClaudeに考えてもらおう</div>
+          <div class="challenge-item">🔷 レシピに「栄養バランスの評価」を追加してもらい、「どの料理が最も体に良いか」をClaudeに分析させよう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const VARIANTS = [
+  {
+    label: '🏙️ 北九州グルメ',
+    prompt: `北九州市のご当地グルメをアレンジしたレシピ本を作ってください。
+
+テーマ：北九州の味を家庭で再現・アレンジ
+
+以下の形式でレシピを3品作ってください：
+
+【料理名】
+【北九州との関係・由来】（2〜3文）
+【材料】（4人分）
+【作り方】（5〜7ステップ、小学生でもわかるように）
+【ポイント・コツ】
+【アレンジ案】（もっと本格的にする方法・もっと簡単にする方法）
+
+最後に「この3品でコース料理を作るなら何から食べる？」も書いてください。`,
+    hint: '焼きうどん・ぬかだき・シロヤベーカリーのパン——北九州ならではの食文化が出てくるよ！'
+  },
+  {
+    label: '🌏 世界の料理',
+    prompt: `「[国名または地域名]」の料理のレシピ本を作ってください。
+
+以下の形式でレシピを3品作ってください：
+
+【料理名】（現地語でも書いてね）
+【その国での位置づけ】（日常食？特別な日の料理？）
+【材料】（4人分・日本で手に入る食材に置き換えてOK）
+【作り方】（わかりやすく5〜7ステップで）
+【食べる時のマナー・文化】
+【日本の料理との共通点と違い】
+
+最後に「この国の料理を体験できる北九州のお店」があれば教えてください。
+
+「[国名]」に行ってみたい国や好きな国を入れよう！`,
+    hint: '「イタリア」「タイ」「メキシコ」「インド」「韓国」など。好きな国の料理を探ろう！'
+  },
+  {
+    label: '🌈 創作料理',
+    prompt: `「[テーマや制約]」をテーマにした完全オリジナルの創作料理レシピを3品考えてください。
+
+以下の形式で：
+
+【料理名】（オリジナルのかっこいい名前）
+【コンセプト】（なぜこの料理を作ったか・どんな気持ちで食べてほしいか）
+【材料】（4人分）
+【作り方】（5〜7ステップ）
+【見た目の説明】（色・形・盛り付け）
+【合う飲み物・季節】
+
+「[テーマや制約]」の例：
+・青い食べ物だけ使って
+・5分で作れる時短料理
+・北九州の食材だけで
+・スポーツ選手向けの栄養満点料理`,
+    hint: '「[テーマや制約]」を自分で決めると面白い！「砂漠で作れる料理」「宇宙食をおいしくしたら」など大胆に'
+  },
+  {
+    label: '🎉 給食アレンジ',
+    prompt: `学校の給食メニューを家庭でアレンジするレシピを3品作ってください。
+
+条件：
+・元の給食メニュー名を書く
+・家庭でもっとおいしく・本格的にするアレンジ
+・子どもが一人でも作れる難易度（小学5〜6年生）
+
+以下の形式で：
+
+【元の給食メニュー】
+【アレンジのポイント】（何を変えるとよりおいしくなるか）
+【材料】（2〜3人分）
+【作り方】（わかりやすく4〜6ステップで）
+【給食との違い】
+【親に頼む部分】（火・包丁など危険な作業）
+
+最後に「給食で一番人気の料理を予想して理由も教えて」と聞いてください。`,
+    hint: 'カレーライス・揚げパン・ゼリー・ソフト麺など「給食あるある」メニューを選んでみよう'
+  }
+];
+
+let selected = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const row = document.getElementById('variant-row');
+  row.innerHTML = VARIANTS.map((v, i) => `<span class="variant-chip" onclick="selectVariant(${i})">${v.label}</span>`).join('');
+}
+
+function selectVariant(i) {
+  selected = i;
+  document.querySelectorAll('.variant-chip').forEach((c, ci) => c.classList.toggle('active', ci === i));
+  document.getElementById('variant-label').textContent = VARIANTS[i].label;
+  document.getElementById('prompt-text').textContent = VARIANTS[i].prompt;
+  document.getElementById('prompt-hint').textContent = '💬 ' + VARIANTS[i].hint;
+}
+
+function copyPrompt() {
+  if (selected === null) { showToast('まずテーマを選んでね！'); return; }
+  navigator.clipboard.writeText(VARIANTS[selected].prompt).then(() => showToast('📋 コピーしたよ！')).catch(() => showToast('手動でコピーしよう'));
+}
+
+function openClaude() {
+  if (selected !== null) navigator.clipboard.writeText(VARIANTS[selected].prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

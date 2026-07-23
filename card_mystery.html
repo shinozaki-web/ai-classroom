@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 謎解きゲームを作ろう | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #2563a8 0%, #7C6FE0 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .variant-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .variant-chip { background: var(--bg); border: 2px solid #E0E4F0; color: var(--ink-mid); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .variant-chip:hover { border-color: var(--sky); background: var(--sky-light); }
+  .variant-chip.active { background: var(--sky); color: white; border-color: var(--sky); }
+
+  .prompt-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: 16px; }
+  .prompt-box-head { background: var(--sky); color: white; padding: 10px 16px; font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .prompt-box-body { padding: 14px 16px; }
+  .prompt-text { background: var(--bg); border-radius: 10px; border: 1.5px solid #E0E4F0; padding: 12px; font-size: 13px; color: var(--ink-mid); line-height: 1.8; white-space: pre-wrap; min-height: 80px; }
+  .prompt-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; }
+
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+  .btn-copy { flex: 1; padding: 13px; background: var(--bg); color: var(--ink); border: 2px solid #E0E4F0; border-radius: 12px; font-size: 14px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--sky); background: var(--sky-light); }
+  .btn-open { flex: 2; padding: 13px; background: var(--sky); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-open:hover { background: var(--sky-dark); }
+
+  .tips-box { background: var(--amber-light); border: 2px solid var(--amber); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: #b87d00; margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div id="app-screen">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🔍</div>
+      <div class="card-hero-title">謎解きゲームを作ろう</div>
+      <div class="card-hero-desc">脱出ゲーム・なぞなぞ・暗号・推理——<br>AIと一緒に頭をひねる謎を作ろう！</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🎮 ゲーム</span>
+        <span class="card-tag">✏️ 創作</span>
+        <span class="card-tag">🧠 思考力</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <p class="lesson-text">やりたい謎のタイプを選んで、プロンプトをClaudeに送ろう。<br>作ったゲームを友達に出してみよう！</p>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px">① やりたいタイプを選ぼう</div>
+        <div class="variant-row" id="variant-row"></div>
+
+        <div class="prompt-box">
+          <div class="prompt-box-head">
+            📋 プロンプト
+            <span id="variant-label" style="font-size:11px;font-weight:400;opacity:0.85"></span>
+          </div>
+          <div class="prompt-box-body">
+            <div class="prompt-text" id="prompt-text">← 上からタイプを選んでね！</div>
+            <div class="prompt-hint" id="prompt-hint"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-copy" onclick="copyPrompt()">📋 コピー</button>
+          <button class="btn-open" onclick="openClaude()">🚀 Claudeで試す</button>
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-title">🔑 謎作りのコツ</div>
+          <div class="tip-item">最初に「難易度：小学生向け」と伝えると、ちょうどいい難しさになりやすい</div>
+          <div class="tip-item">「北九州を舞台にして」と加えると、地元感のある謎になる</div>
+          <div class="tip-item">「ヒントも3段階で作って」と頼むと、詰まった友達にヒントを出せる</div>
+          <div class="tip-item">作った謎をClaudeに「もっと難しくして」「子どもでも解けるように直して」と修正できる</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ もっとやってみよう</div>
+          <div class="challenge-item">🔶 作った謎を実際に友達や家族に出してみよう。「難しすぎた」「簡単すぎた」を聞いてClaudeに調整してもらおう</div>
+          <div class="challenge-item">🔶 謎を「シリーズ」にして、第1話・第2話と続けて作ってみよう</div>
+          <div class="challenge-item">🔷 謎解きの「答え合わせ解説」もClaudeに作ってもらって、なぜその答えになるか説明できるようにしよう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const VARIANTS = [
+  {
+    label: '🏃 脱出ゲーム',
+    prompt: `「[テーマ]」をテーマにした脱出ゲームを作ってください。
+
+設定：[場所や世界観を書いてね　例：廃校・宇宙船・門司港の倉庫]
+難易度：小学生〜中学生向け
+
+以下の形式で作ってください：
+① 状況説明（プレイヤーが置かれた状況を2〜3文で）
+② 謎1〜謎3（それぞれヒント付き）
+③ 全問正解したときの脱出成功メッセージ
+
+※ 謎は「数字の暗号」「言葉の謎」「観察系」の3種類を混ぜてください`,
+    hint: '「[テーマ]」と「[場所]」を自分で決めてから送ろう！例：「学校の怪談」「門司港のお宝探し」'
+  },
+  {
+    label: '❓ なぞなぞ',
+    prompt: `[テーマ]に関するなぞなぞを10問作ってください。
+
+条件：
+・小学生〜中学生が楽しめる難しさ
+・難易度を「やさしい(3問)」「ふつう(4問)」「むずかしい(3問)」に分けて
+・答えはなぞなぞの下に「答え：○○」と書く
+・北九州に関係するものを少なくとも2問入れる
+
+「[テーマ]」の部分は好きなジャンルに変えてね（例：食べ物・動物・乗り物・北九州）`,
+    hint: '「[テーマ]」を変えると何でも作れる！「ポケモン」「給食メニュー」でも試してみよう'
+  },
+  {
+    label: '🔐 暗号メッセージ',
+    prompt: `「[メッセージ]」という言葉を暗号にしてください。
+
+暗号のタイプ：[以下から選んでね]
+A. 50音置き換え暗号（あ→1、い→2のように数字に変換）
+B. 逆読み暗号（文字を逆から読む）
+C. 絵文字暗号（各文字を絵文字に対応させる）
+
+以下の形式で作ってください：
+① 暗号化されたメッセージ
+② 解読のルール説明
+③ ヒント（解読のとっかかり）
+
+「[メッセージ]」には自分が伝えたい言葉を入れよう！`,
+    hint: 'メッセージは短い方が作りやすい。「なかまはずれ」「さくせんかいし」などの短い言葉から試してみよう'
+  },
+  {
+    label: '🕵️ 推理クイズ',
+    prompt: `小学生向けの推理クイズを3問作ってください。
+
+条件：
+・「誰が・いつ・どこで・何をしたか」がわかる短い物語形式
+・答えは1つに絞れるよう、ヒントを3つ用意する
+・北九州の場所（門司港・小倉・八幡など）を舞台にする
+・登場人物は3〜4人にする
+
+形式：
+【事件の概要】（3〜5文）
+【手がかり①②③】
+【質問】○○したのは誰？
+【答えと解説】`,
+    hint: '「難易度：中学生向け」に変えるともっと本格的な推理になるよ'
+  }
+];
+
+let selected = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  const row = document.getElementById('variant-row');
+  row.innerHTML = VARIANTS.map((v, i) => `<span class="variant-chip" onclick="selectVariant(${i})">${v.label}</span>`).join('');
+}
+
+function selectVariant(i) {
+  selected = i;
+  document.querySelectorAll('.variant-chip').forEach((c, ci) => c.classList.toggle('active', ci === i));
+  document.getElementById('variant-label').textContent = VARIANTS[i].label;
+  document.getElementById('prompt-text').textContent = VARIANTS[i].prompt;
+  document.getElementById('prompt-hint').textContent = '💬 ' + VARIANTS[i].hint;
+}
+
+function copyPrompt() {
+  if (selected === null) { showToast('まずタイプを選んでね！'); return; }
+  navigator.clipboard.writeText(VARIANTS[selected].prompt).then(() => showToast('📋 コピーしたよ！Claudeに貼り付けよう！')).catch(() => showToast('コピーできなかった…手動でコピーしよう'));
+}
+
+function openClaude() {
+  if (selected !== null) navigator.clipboard.writeText(VARIANTS[selected].prompt).catch(() => {});
+  window.open('https://claude.ai/new', '_blank');
+  showToast('🚀 Claudeが開いたよ！プロンプトを貼り付けよう！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

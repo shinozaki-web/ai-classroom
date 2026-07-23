@@ -126,6 +126,23 @@
   .stamp { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; }
   .stamp.empty { background: #EBEBEB; border: 2px dashed #C8C8C8; color: #bbb; font-size: 10px; font-weight: 700; }
 
+  /* ===== 探求カード ===== */
+  .card-row {
+    background: var(--white); border-radius: 14px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-card); cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none; color: inherit;
+    border-left: 4px solid transparent;
+  }
+  .card-row:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .card-tag-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px;
+    background: linear-gradient(135deg, var(--purple-light), var(--sky-light));
+    color: var(--purple); white-space: nowrap; border: 1px solid #D0C8FF;
+  }
+  .card-section-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px; padding: 10px 14px; background: var(--purple-light); border-radius: 10px; border: 1px solid #D0C8FF; }
+
   /* ===== 保存コード ===== */
   .btn-save-code {
     width: 100%; margin-top: 10px; padding: 10px; background: transparent;
@@ -281,6 +298,59 @@
   </div>
 
   <div id="lesson-list-container"></div>
+
+  <div class="section-label" style="margin-top:28px">🎯 探求カード（自由ミッション）</div>
+  <div class="card-section-desc">授業を早く終わったら挑戦しよう！<br>自由テーマでAIを使い倒す6枚のカード。ステップなし、好きなだけ遊んでいい！</div>
+  <div class="lesson-list" id="card-list">
+    <a class="card-row" href="card_mystery.html" style="border-left-color:#4A90E2">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#2563a8,#7C6FE0)">🔍</div>
+      <div class="lesson-info">
+        <div class="lesson-name">謎解きゲームを作ろう</div>
+        <div class="lesson-desc">脱出・なぞなぞ・暗号・推理——AIと謎を作る</div>
+      </div>
+      <span class="card-tag-badge">自由</span>
+    </a>
+    <a class="card-row" href="card_mascot.html" style="border-left-color:#F5A623">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#F5A623,#F26B5B)">🐾</div>
+      <div class="lesson-info">
+        <div class="lesson-name">架空のゆるキャラを作ろう</div>
+        <div class="lesson-desc">北九州ゆかりの新キャラを誕生させよう</div>
+      </div>
+      <span class="card-tag-badge">自由</span>
+    </a>
+    <a class="card-row" href="card_interview.html" style="border-left-color:#34C88A">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#34C88A,#2563a8)">🎙️</div>
+      <div class="lesson-info">
+        <div class="lesson-name">AIにインタビューしよう</div>
+        <div class="lesson-desc">歴史上の人物・未来人・プロにインタビュー</div>
+      </div>
+      <span class="card-tag-badge">自由</span>
+    </a>
+    <a class="card-row" href="card_zukan.html" style="border-left-color:#7C6FE0">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#7C6FE0,#F26B5B)">📖</div>
+      <div class="lesson-info">
+        <div class="lesson-name">じぶん図鑑を作ろう</div>
+        <div class="lesson-desc">好きなものテーマの世界に1冊だけの百科事典</div>
+      </div>
+      <span class="card-tag-badge">自由</span>
+    </a>
+    <a class="card-row" href="card_recipe.html" style="border-left-color:#F26B5B">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#F26B5B,#F5A623)">🍳</div>
+      <div class="lesson-info">
+        <div class="lesson-name">レシピ本を作ろう</div>
+        <div class="lesson-desc">北九州グルメ・世界料理・創作料理のレシピ集</div>
+      </div>
+      <span class="card-tag-badge">自由</span>
+    </a>
+    <a class="card-row" href="card_dojo.html" style="border-left-color:#3B2F7A">
+      <div class="lesson-num" style="background:linear-gradient(135deg,#3B2F7A,#7C6FE0)">🥋</div>
+      <div class="lesson-info">
+        <div class="lesson-name">プロンプト道場</div>
+        <div class="lesson-desc">白帯→黒帯まで、AIへの伝え方を鍛えよう</div>
+      </div>
+      <span class="card-tag-badge">スキルアップ</span>
+    </a>
+  </div>
 
 </div>
 
