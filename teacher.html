@@ -523,22 +523,22 @@ function printIds() {
   const rows = studentAccounts.map(s =>
     `<tr><td style="font-size:18px;font-weight:bold;letter-spacing:0.05em">${s.student_id}</td><td>${s.name}</td><td>${s.class_code}</td><td>${s.grade||''}</td></tr>`
   ).join('');
-  win.document.write(`<!DOCTYPE html><html><head><title>ログインID一覧</title>
-    <style>
-      body{font-family:sans-serif;padding:24px;max-width:700px;margin:0 auto}
-      h2{margin-bottom:4px}p{color:#666;margin-bottom:16px;font-size:13px}
-      table{border-collapse:collapse;width:100%}
-      td,th{border:1px solid #ccc;padding:10px 14px;text-align:left}
-      th{background:#f5f5f5;font-size:13px}
-      @media print{button{display:none}}
-    </style></head><body>
-    <h2>🔑 AI教室 ログインID一覧</h2>
-    <p>URL: <strong>https://shinozaki-web.github.io/ai-classroom/</strong>　※IDを入力してログインしてください</p>
-    <table><thead><tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-    <script>setTimeout(()=>window.print(),300)</script>
-    </body></html>`);
+  win.document.write('<!DOCTYPE html><html><head><title>ログインID一覧</title>'
+    + '<style>'
+    + 'body{font-family:sans-serif;padding:24px;max-width:700px;margin:0 auto}'
+    + 'h2{margin-bottom:4px}p{color:#666;margin-bottom:16px;font-size:13px}'
+    + 'table{border-collapse:collapse;width:100%}'
+    + 'td,th{border:1px solid #ccc;padding:10px 14px;text-align:left}'
+    + 'th{background:#f5f5f5;font-size:13px}'
+    + '@media print{button{display:none}}'
+    + '</style></head><body>'
+    + '<h2>🔑 AI教室 ログインID一覧</h2>'
+    + '<p>URL: <strong>https://shinozaki-web.github.io/ai-classroom/</strong>　※IDを入力してログインしてください</p>'
+    + '<table><thead><tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table>'
+    + '</body></html>');
   win.document.close();
+  win.print();
 }
 
 function subscribeRealtime() {
