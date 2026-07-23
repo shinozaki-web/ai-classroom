@@ -267,4 +267,18 @@ setInterval(function() {
   if (state.name && state.classCode && state.classCode !== 'クラスなし') syncToSupabase();
 }, 120000);
 
+// ===== CARD AUTO-VISIT =====
+(function() {
+  const m = (location.pathname || '').match(/\/(card_[\w]+)\.html/);
+  if (!m) return;
+  const cardKey = m[1];
+  document.addEventListener('DOMContentLoaded', function() {
+    loadState();
+    if (state.name && !state.lessonCompleted[cardKey]) {
+      state.lessonCompleted[cardKey] = true;
+      saveState();
+    }
+  });
+})();
+
 // ===== BOOT =====

@@ -415,6 +415,17 @@ let studentAccounts = [];
 let realtimeChannel = null;
 const LESSON_LABELS = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14'];
 const ACTIVE_MINUTES = 5;
+const CARD_DEFS = [
+  { key: 'card_mystery',       label: '謎解き' },
+  { key: 'card_mascot',        label: 'マスコット' },
+  { key: 'card_interview',     label: 'インタビュー' },
+  { key: 'card_zukan',         label: '図鑑' },
+  { key: 'card_recipe',        label: 'レシピ' },
+  { key: 'card_dojo',          label: 'プロ道場' },
+  { key: 'card_prompt_battle', label: 'プロ比べ' },
+  { key: 'card_typing',        label: 'タイピング' },
+  { key: 'card_summer',        label: '自由研究' },
+];
 
 // ===== AUTH =====
 function doLogin() {
@@ -607,6 +618,16 @@ function lessonBubbles(lc) {
   ).join('');
 }
 
+function cardBubbles(lc) {
+  return CARD_DEFS.map(c =>
+    `<div class="step-bubble ${lc[c.key] ? 'done' : ''}" title="${c.label}" style="font-size:9px;min-width:36px">${c.label}</div>`
+  ).join('');
+}
+
+function cardCount(lc) {
+  return CARD_DEFS.filter(c => lc[c.key]).length;
+}
+
 function renderStudentTable(students) {
   return `
     <div style="overflow-x:auto">
@@ -615,7 +636,8 @@ function renderStudentTable(students) {
         <tr>
           <th>なまえ</th>
           <th>学年・区</th>
-          <th style="min-width:320px">授業の進み具合（第1〜14回）</th>
+          <th style="min-width:320px">授業（第1〜14回）</th>
+          <th style="min-width:280px">探求カード（9枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
@@ -623,15 +645,16 @@ function renderStudentTable(students) {
       <tbody>
         ${students.map(s => {
           const lc = s.lesson_completed || {};
-          const done = Object.values(lc).filter(Boolean).length;
+          const lessonDone = LESSON_LABELS.filter(i => lc[i]).length;
           const active = isActive(s);
-          const status = active ? 'active' : done >= 14 ? 'done' : done > 0 ? 'mid' : 'start';
-          const statusLabel = active ? '🟢 授業中' : done >= 14 ? '完了 🎉' : done > 0 ? '進行中' : '未開始';
+          const status = active ? 'active' : lessonDone >= 14 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
+          const statusLabel = active ? '🟢 授業中' : lessonDone >= 14 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
           return `
             <tr ${active ? 'style="background:#f0fff4"' : ''}>
               <td class="student-name">${esc(s.name||'-')}</td>
               <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
               <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
+              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/9 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
@@ -657,7 +680,8 @@ function renderAllStudentsTable() {
           <th>なまえ</th>
           <th>クラス</th>
           <th>学年・区</th>
-          <th style="min-width:320px">授業の進み具合（第1〜14回）</th>
+          <th style="min-width:320px">授業（第1〜14回）</th>
+          <th style="min-width:280px">探求カード（9枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
@@ -665,16 +689,17 @@ function renderAllStudentsTable() {
       <tbody>
         ${allStudents.map(s => {
           const lc = s.lesson_completed || {};
-          const done = Object.values(lc).filter(Boolean).length;
+          const lessonDone = LESSON_LABELS.filter(i => lc[i]).length;
           const active = isActive(s);
-          const status = active ? 'active' : done >= 14 ? 'done' : done > 0 ? 'mid' : 'start';
-          const statusLabel = active ? '🟢 授業中' : done >= 14 ? '完了 🎉' : done > 0 ? '進行中' : '未開始';
+          const status = active ? 'active' : lessonDone >= 14 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
+          const statusLabel = active ? '🟢 授業中' : lessonDone >= 14 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
           return `
             <tr ${active ? 'style="background:#f0fff4"' : ''}>
               <td class="student-name">${esc(s.name||'-')}</td>
               <td><span class="btn-copy" style="cursor:default">${esc(s.class_code||'-')}</span></td>
               <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
               <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
+              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/9 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
