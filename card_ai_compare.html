@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎨 AIで作品を見比べよう | 探求カード</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .card-hero { background: linear-gradient(135deg, #7C6FE0 0%, #4A90E2 100%); border-radius: 18px; padding: 24px 20px; text-align: center; color: white; margin-bottom: 20px; }
+  .card-hero-icon { font-size: 48px; margin-bottom: 10px; }
+  .card-hero-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+  .card-hero-desc { font-size: 13px; opacity: 0.9; line-height: 1.7; }
+  .card-tag { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 99px; font-size: 11px; font-weight: 700; padding: 3px 10px; margin: 4px 2px; }
+
+  .draw-box { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 16px; margin-bottom: 16px; }
+  .draw-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+  .draw-textarea { width: 100%; box-sizing: border-box; min-height: 70px; border: 1.5px solid #E0E4F0; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: 'Noto Sans JP', sans-serif; color: var(--ink); background: var(--bg); outline: none; resize: vertical; }
+  .draw-textarea:focus { border-color: var(--purple); }
+  .draw-hint { font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.6; }
+
+  .btn-send { width: 100%; margin-top: 12px; padding: 13px; background: var(--purple); color: white; border: none; border-radius: 12px; font-size: 15px; font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+  .btn-send:hover { background: #5d50c9; }
+  .btn-send:disabled { background: #ccc; cursor: not-allowed; }
+
+  .ai-card { background: var(--white); border-radius: 14px; box-shadow: var(--shadow-card); padding: 14px 16px; margin-bottom: 12px; }
+  .ai-card-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+
+  .result-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .result-chip { background: white; border: 1.5px solid #E0E4F0; color: var(--ink-mid); font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .result-chip:hover { border-color: var(--purple); }
+  .result-chip.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  .favorite-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .favorite-chip { flex: 1; min-width: 90px; background: white; border: 2px solid #E0E4F0; border-radius: 12px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-mid); cursor: pointer; transition: all 0.15s; }
+  .favorite-chip.active { border-color: var(--coral); background: var(--coral-light); color: #c04040; }
+
+  .first-time-box { background: var(--purple-light); border: 1.5px solid #D0C8FF; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: var(--ink-mid); line-height: 1.7; margin-bottom: 14px; }
+
+  .tips-box { background: var(--purple-light); border: 2px solid var(--purple); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .tips-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .tip-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; display: flex; gap: 8px; margin-bottom: 4px; }
+  .tip-item::before { content: "💡"; flex-shrink: 0; }
+
+  .challenge-box { border: 2px dashed #7C6FE0; border-radius: 14px; padding: 14px 16px; background: var(--purple-light); margin-bottom: 20px; }
+  .challenge-title { font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 8px; }
+  .challenge-item { font-size: 13px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 6px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+<div id="app-screen" style="display:block">
+  <div class="header">
+    <div class="header-logo"><a href="index.html" style="color:inherit;text-decoration:none">🤖 AI教室</a></div>
+    <div class="header-right">
+      <a href="index.html" class="back-btn">🏠 トップへ</a>
+      <div class="name-badge" id="header-name">さん</div>
+    </div>
+  </div>
+  <div class="app-body">
+
+    <div class="card-hero">
+      <div class="card-hero-icon">🎨</div>
+      <div class="card-hero-title">AIで作品を見比べよう</div>
+      <div class="card-hero-desc">門司港をテーマに、Claude・ChatGPT・Geminiに同じお願いを送って<br>できあがるものの違いを自分の目で確かめよう！</div>
+      <div style="margin-top:10px">
+        <span class="card-tag">🎨 デザイン</span>
+        <span class="card-tag">🔍 見比べ</span>
+        <span class="card-tag">🏙️ 門司港</span>
+      </div>
+    </div>
+
+    <div class="lesson-card">
+      <div class="lesson-body">
+        <p class="lesson-text">くわしい指示はいらないよ。まずは<strong>思いついたままの言葉</strong>で、「門司港のイラストを描いて」とお願いしてみよう。</p>
+
+        <div class="draw-box">
+          <div class="draw-label">✏️ AIへのお願いを自分の言葉で書いてみよう</div>
+          <textarea id="draw-input" class="draw-textarea" placeholder="例：門司港のイラストを描いて"></textarea>
+          <div class="draw-hint">同じお願いを、このあと3つのAIに送って見比べるよ。</div>
+        </div>
+
+        <div class="ai-card">
+          <div class="ai-card-head">🟣 Claude</div>
+          <button class="btn-send" id="send-claude-btn" onclick="sendTo('claude')" disabled>🚀 Claudeに送ってみる</button>
+          <div id="result-claude"></div>
+        </div>
+
+        <div class="first-time-box">
+          🆕 ここからは初めてのAIかもしれない！ログインが必要なときは、先生かおうちの人と一緒に準備してね。
+        </div>
+
+        <div class="ai-card">
+          <div class="ai-card-head">🟢 ChatGPT</div>
+          <button class="btn-send" id="send-chatgpt-btn" style="background:#10a37f" onclick="sendTo('chatgpt')" disabled>🚀 ChatGPTに送ってみる</button>
+          <div id="result-chatgpt"></div>
+        </div>
+
+        <div class="ai-card">
+          <div class="ai-card-head">🔵 Gemini</div>
+          <button class="btn-send" id="send-gemini-btn" style="background:#4285F4" onclick="sendTo('gemini')" disabled>🚀 Geminiに送ってみる</button>
+          <div id="result-gemini"></div>
+        </div>
+
+        <div class="ai-card" id="favorite-card" style="display:none">
+          <div class="ai-card-head">🏆 3つの中で一番よかったのは？</div>
+          <div class="favorite-row" id="favorite-row"></div>
+        </div>
+
+        <div class="tips-box">
+          <div class="tips-title">🔑 見比べるときのポイント</div>
+          <div class="tip-item">絵が出てくるAI・言葉の説明だけのAIがある。まずは「何が返ってきたか」をそのまま観察しよう</div>
+          <div class="tip-item">「どのAIが一番賢いか」ではなく「今回は何をしたいか」で選ぶAIを変えるのが上手な使い方</div>
+          <div class="tip-item">結果がいまいちでも、それも大事な発見。「このAIは絵よりも文章が得意なんだな」と気づけたら大成功</div>
+        </div>
+
+        <div class="challenge-box">
+          <div class="challenge-title">⭐ もっとやってみよう</div>
+          <div class="challenge-item">🔶 好きな結果を選んで、家族や友達に「なぜこれが好きか」を説明してみよう</div>
+          <div class="challenge-item">🔶 門司港以外の場所（小倉城・若松・八幡など）でも同じお願いを3つのAIに送って比べてみよう</div>
+          <div class="challenge-item">🔷 （中学生向け）Claudeに「AIによって画像を作れる・作れないの違いはどうして起きるの？」と聞いて調べてみよう</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+const RESULT_OPTIONS = [
+  { key: 'image', icon: '🖼️', label: '絵が出てきた' },
+  { key: 'text',  icon: '📝', label: '言葉の説明だけだった' },
+  { key: 'other', icon: '🤔', label: 'よくわからなかった' }
+];
+const AI_URLS = {
+  claude: 'https://claude.ai/new',
+  chatgpt: 'https://chatgpt.com/',
+  gemini: 'https://gemini.google.com/app'
+};
+const AI_LABELS = { claude: '🟣 Claude', chatgpt: '🟢 ChatGPT', gemini: '🔵 Gemini' };
+
+let results = { claude: null, chatgpt: null, gemini: null };
+let favorite = null;
+
+function init() {
+  loadState();
+  document.getElementById('header-name').textContent = (state.name || 'ゲスト') + 'さん';
+  document.getElementById('draw-input').addEventListener('input', function() {
+    const has = !!this.value.trim();
+    ['claude', 'chatgpt', 'gemini'].forEach(ai => { document.getElementById('send-' + ai + '-btn').disabled = !has; });
+  });
+}
+
+function sendTo(ai) {
+  const text = document.getElementById('draw-input').value.trim();
+  if (!text) return;
+  navigator.clipboard.writeText(text).catch(() => {});
+  window.open(AI_URLS[ai], '_blank');
+  showToast('🚀 ' + AI_LABELS[ai] + ' が開いたよ！お願いの文章はコピーしたから貼り付けてね！');
+  renderResultChips(ai);
+}
+
+function renderResultChips(ai) {
+  const el = document.getElementById('result-' + ai);
+  el.innerHTML = `<div style="margin-top:12px"><div style="font-size:13px;font-weight:700;color:var(--ink)">${AI_LABELS[ai]}はどうだった？</div><div class="result-chip-row">${RESULT_OPTIONS.map(r => `<span class="result-chip ${results[ai] === r.key ? 'active' : ''}" onclick="selectResult('${ai}','${r.key}')">${r.icon} ${r.label}</span>`).join('')}</div></div>`;
+}
+
+function selectResult(ai, key) {
+  results[ai] = key;
+  renderResultChips(ai);
+  checkFavorite();
+}
+
+function checkFavorite() {
+  const card = document.getElementById('favorite-card');
+  if (results.claude && results.chatgpt && results.gemini) {
+    card.style.display = 'block';
+    renderFavoriteRow();
+  }
+}
+
+function renderFavoriteRow() {
+  document.getElementById('favorite-row').innerHTML = ['claude', 'chatgpt', 'gemini'].map(ai =>
+    `<div class="favorite-chip ${favorite === ai ? 'active' : ''}" onclick="selectFavorite('${ai}')">${AI_LABELS[ai]}</div>`
+  ).join('');
+}
+
+function selectFavorite(ai) {
+  favorite = ai;
+  renderFavoriteRow();
+  showToast('🏆 ' + AI_LABELS[ai] + ' を選んだね！');
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+init();
+</script>
+</body>
+</html>

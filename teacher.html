@@ -425,6 +425,7 @@ const CARD_DEFS = [
   { key: 'card_prompt_battle', label: 'プロ比べ' },
   { key: 'card_typing',        label: 'タイピング' },
   { key: 'card_summer',        label: '自由研究' },
+  { key: 'card_ai_compare',    label: 'AI見比べ' },
 ];
 
 // ===== AUTH =====
@@ -637,7 +638,7 @@ function renderStudentTable(students) {
           <th>なまえ</th>
           <th>学年・区</th>
           <th style="min-width:320px">授業（第1〜14回）</th>
-          <th style="min-width:280px">探求カード（9枚）</th>
+          <th style="min-width:280px">探求カード（10枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
@@ -654,7 +655,7 @@ function renderStudentTable(students) {
               <td class="student-name">${esc(s.name||'-')}</td>
               <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
               <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
-              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/9 枚</div></td>
+              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
@@ -681,7 +682,7 @@ function renderAllStudentsTable() {
           <th>クラス</th>
           <th>学年・区</th>
           <th style="min-width:320px">授業（第1〜14回）</th>
-          <th style="min-width:280px">探求カード（9枚）</th>
+          <th style="min-width:280px">探求カード（10枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
         </tr>
@@ -699,7 +700,7 @@ function renderAllStudentsTable() {
               <td><span class="btn-copy" style="cursor:default">${esc(s.class_code||'-')}</span></td>
               <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
               <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
-              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/9 枚</div></td>
+              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
             </tr>
