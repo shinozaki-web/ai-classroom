@@ -494,6 +494,15 @@ async function deleteStudent(sid) {
   loadDashboard();
 }
 
+async function deleteProgress(name, classCode) {
+  if (!confirm(name + '（' + classCode + '）の進捗データを削除しますか？\n※この操作は取り消せません')) return;
+  const { error } = await sb.from('student_progress')
+    .delete().eq('name', name).eq('class_code', classCode);
+  if (error) { showToast('エラー: ' + error.message); return; }
+  showToast('🗑️ ' + name + ' の進捗を削除しました');
+  loadDashboard();
+}
+
 function renderStudentAccounts() {
   const container = document.getElementById('students-list');
   if (!studentAccounts.length) {
@@ -641,6 +650,7 @@ function renderStudentTable(students) {
           <th style="min-width:280px">探求カード（10枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -658,6 +668,8 @@ function renderStudentTable(students) {
               <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
+              <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
+                onclick="deleteProgress('${esc(s.name)}','${esc(s.class_code)}')">削除</button></td>
             </tr>
           `;
         }).join('')}
@@ -685,6 +697,7 @@ function renderAllStudentsTable() {
           <th style="min-width:280px">探求カード（10枚）</th>
           <th>ステータス</th>
           <th>最終アクセス</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -703,6 +716,8 @@ function renderAllStudentsTable() {
               <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
+              <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
+                onclick="deleteProgress('${esc(s.name)}','${esc(s.class_code)}')">削除</button></td>
             </tr>
           `;
         }).join('')}
