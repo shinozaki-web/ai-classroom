@@ -669,7 +669,8 @@ function renderStudentTable(students) {
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
               <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
-                onclick="deleteProgress('${esc(s.name)}','${esc(s.class_code)}')">削除</button></td>
+                data-name="${esc(s.name)}" data-classcode="${esc(s.class_code)}"
+                onclick="deleteProgress(this.dataset.name, this.dataset.classcode)">削除</button></td>
             </tr>
           `;
         }).join('')}
@@ -717,7 +718,8 @@ function renderAllStudentsTable() {
               <td><span class="status-tag status-${status}">${statusLabel}</span></td>
               <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
               <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
-                onclick="deleteProgress('${esc(s.name)}','${esc(s.class_code)}')">削除</button></td>
+                data-name="${esc(s.name)}" data-classcode="${esc(s.class_code)}"
+                onclick="deleteProgress(this.dataset.name, this.dataset.classcode)">削除</button></td>
             </tr>
           `;
         }).join('')}
