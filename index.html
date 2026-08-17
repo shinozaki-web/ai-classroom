@@ -447,6 +447,7 @@ async function loginWithId() {
 
   saveState();
   document.getElementById('header-name').textContent = student.name + 'さん';
+  document.getElementById('save-code-btn').style.display = 'block';
   showProfile();
   showToast('✅ ' + student.name + 'さんでログインしたよ！');
   renderAll();
@@ -549,6 +550,7 @@ loadState();
 
 if (state.name) {
   document.getElementById('header-name').textContent = state.name + 'さん';
+  document.getElementById('save-code-btn').style.display = 'block';
   showProfile();
 } else {
   document.getElementById('reg-card').style.display = 'block';
