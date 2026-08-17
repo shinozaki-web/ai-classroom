@@ -237,6 +237,13 @@
   <div style="max-width:420px;margin:0 auto">
     <button class="btn-save-code" id="save-code-btn" style="display:none" onclick="showSaveCodeModal()">💾 別のパソコンで使うためのコードを作る</button>
   </div>
+  <div style="max-width:420px;margin:10px auto 0">
+    <button class="restore-toggle-btn" onclick="toggleRestoreArea()">📥 コードで復元する</button>
+    <div class="restore-area" id="restore-area" style="display:none">
+      <textarea class="restore-textarea" id="restore-input" placeholder="保存コードをここに貼り付けてね"></textarea>
+      <button class="btn-restore" onclick="doRestore()">復元する</button>
+    </div>
+  </div>
 </div>
 
 <div class="main-body">
@@ -615,7 +622,17 @@ function toggleRestoreArea() {
 function doRestore() {
   const code = document.getElementById('restore-input').value.trim();
   if (!code) { showToast('コードを貼り付けてね！'); return; }
+  const savedId    = state.studentId;
+  const savedName  = state.name;
+  const savedClass = state.classCode;
   if (restoreFromCode(code)) {
+    // IDログイン済みの場合、名前・クラスコードはIDに紐づく値を優先する
+    if (savedId) {
+      state.studentId = savedId;
+      state.name      = savedName;
+      state.classCode = savedClass;
+      saveState();
+    }
     _selectedGrade = state.grade || '';
     _selectedWard  = state.ward  || '';
     document.getElementById('header-name').textContent = state.name + 'さん';
