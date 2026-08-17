@@ -489,7 +489,8 @@ async function createStudent() {
 
 async function deleteStudent(sid) {
   if (!confirm(sid + ' を削除しますか？')) return;
-  await sb.from('students').delete().eq('student_id', sid);
+  const { error } = await sb.from('students').delete().eq('student_id', sid);
+  if (error) { showToast('エラー: ' + error.message); return; }
   showToast('🗑️ 削除しました');
   loadDashboard();
 }
