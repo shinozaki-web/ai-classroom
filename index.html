@@ -213,16 +213,20 @@
 <div class="top-hero">
   <div class="top-title">🤖 門司港プログラミング教室<br>AI授業へようこそ！</div>
 
-  <!-- ログインフォーム -->
+  <!-- このChromeへのプロフィール登録 -->
   <div class="reg-card" id="reg-card">
-    <div class="reg-card-title">🔑 ログインしよう！</div>
+    <div class="reg-card-title">💻 このパソコンで使う名前を登録しよう！</div>
     <div class="reg-field">
-      <div class="reg-label">ログインID <span class="reg-optional">（先生からもらった番号を入力してね）</span></div>
-      <input class="reg-input" id="student-id-input" type="text" placeholder="例：LAM-001" maxlength="20"
-        style="text-transform:uppercase;letter-spacing:0.05em"
-        onkeydown="if(event.key==='Enter')loginWithId()">
+      <div class="reg-label">なまえ <span class="reg-optional">（ニックネームでもOK）</span></div>
+      <input class="reg-input" id="student-name-input" type="text" placeholder="例：たろう" maxlength="20">
     </div>
-    <button class="btn-register" onclick="loginWithId()">入る 🚀</button>
+    <div class="reg-field">
+      <div class="reg-label">クラス <span class="reg-optional">（わからなければ空白でOK）</span></div>
+      <input class="reg-input" id="local-class-input" type="text" placeholder="例：MOJIKO-A" maxlength="20"
+        onkeydown="if(event.key==='Enter')registerLocalProfile()">
+    </div>
+    <div class="reg-optional" style="line-height:1.7;margin-bottom:10px">進み具合はこのChromeの中に保存されます。毎回同じパソコン・同じChromeで開いてください。</div>
+    <button class="btn-register" onclick="registerLocalProfile()">このパソコンで始める 🚀</button>
   </div>
 
   <!-- 登録済みプロフィール -->
@@ -417,44 +421,26 @@ const ALL_LESSONS = [
 const BLOCK_NAMES = {1:'ブロック①　AIと仲良くなる', 2:'ブロック②　AIと一緒に作る', 3:'ブロック③　AIを問い直す'};
 const AVAILABLE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
-// ===== ログイン処理 =====
-async function loginWithId() {
-  const sid = document.getElementById('student-id-input').value.trim().toUpperCase();
-  if (!sid) { showToast('ログインIDを入力してね！'); return; }
+// ===== このChromeへのプロフィール登録 =====
+function registerLocalProfile() {
+  const name = document.getElementById('student-name-input').value.trim();
+  const classCode = document.getElementById('local-class-input').value.trim();
+  if (!name) { showToast('なまえを入力してね！'); return; }
 
-  showToast('⏳ 確認中...');
-  await _waitForSb();
-  if (!_sb) { showToast('通信エラー。ページを再読み込みしてね'); return; }
-
-  const { data: student, error } = await _sb.from('students').select('*').eq('student_id', sid).maybeSingle();
-  if (error || !student) {
-    showToast('❌ IDが見つかりません。先生に確認してね');
-    return;
-  }
-
-  state.studentId = sid;
-  state.name      = student.name;
-  state.grade     = student.grade || '';
-  state.ward      = student.ward  || '';
-  state.classCode = student.class_code || '';
-
-  const { data: progress } = await _sb.from('student_progress')
-    .select('*').eq('name', student.name).eq('class_code', student.class_code).maybeSingle();
-  if (progress) {
-    state.lessonCompleted = progress.lesson_completed || {};
-    state.seenBadges      = progress.seen_badges || [];
-  }
+  state.name = name.slice(0, 20);
+  state.classCode = (classCode || 'クラスなし').slice(0, 20);
 
   saveState();
-  document.getElementById('header-name').textContent = student.name + 'さん';
+  document.getElementById('header-name').textContent = state.name + 'さん';
   document.getElementById('save-code-btn').style.display = 'block';
   showProfile();
-  showToast('✅ ' + student.name + 'さんでログインしたよ！');
+  showToast('✅ このパソコンに保存しました');
   renderAll();
 }
 
 function showRegForm() {
-  document.getElementById('student-id-input').value = state.studentId || '';
+  document.getElementById('student-name-input').value = state.name || '';
+  document.getElementById('local-class-input').value = state.classCode === 'クラスなし' ? '' : (state.classCode || '');
   document.getElementById('reg-card').style.display = 'block';
   document.getElementById('profile-card').style.display = 'none';
 }
@@ -562,6 +548,7 @@ function generateSaveCode() {
   const saveData = {
     v: 1,
     s: {
+      studentId: state.studentId || '',
       name: state.name,
       grade: state.grade || '',
       ward: state.ward || '',
@@ -583,6 +570,7 @@ function restoreFromCode(code) {
   try {
     const data = JSON.parse(decodeURIComponent(atob(code.trim())));
     if (!data.v || !data.s || !data.s.name) return false;
+    state.studentId   = data.s.studentId || '';
     state.name        = data.s.name;
     state.grade       = data.s.grade || '';
     state.ward        = data.s.ward || '';
@@ -635,8 +623,6 @@ function doRestore() {
       state.classCode = savedClass;
       saveState();
     }
-    _selectedGrade = state.grade || '';
-    _selectedWard  = state.ward  || '';
     document.getElementById('header-name').textContent = state.name + 'さん';
     document.getElementById('save-code-btn').style.display = 'block';
     showProfile();

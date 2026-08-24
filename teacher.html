@@ -3,783 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>先生用ダッシュボード | 門司港AI教室</title>
+<title>この端末の進捗確認 | 門司港AI教室</title>
+<link rel="stylesheet" href="shared.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
-
-  :root {
-    --sky: #4A90E2;
-    --sky-light: #EBF4FF;
-    --sky-dark: #2563a8;
-    --mint: #34C88A;
-    --mint-light: #E8FBF2;
-    --amber: #F5A623;
-    --amber-light: #FFF8EB;
-    --coral: #F26B5B;
-    --coral-light: #FFF0EE;
-    --purple: #7C6FE0;
-    --ink: #1a1a2e;
-    --ink-mid: #4a4a6a;
-    --ink-soft: #8888aa;
-    --bg: #F0F4FF;
-    --white: #ffffff;
-    --radius: 16px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-  }
-
-  /* HEADER */
-  .header {
-    background: var(--ink);
-    color: white;
-    padding: 0 24px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .header-logo {
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-weight: 800;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .header-badge {
-    background: var(--sky);
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 99px;
-  }
-  .header-right { display: flex; gap: 10px; align-items: center; }
-  .header-link {
-    color: rgba(255,255,255,0.7);
-    font-size: 13px;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .header-link:hover { color: white; }
-
-  /* LOGIN SCREEN */
-  #login-screen {
-    min-height: calc(100vh - 60px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .login-card {
-    background: var(--white);
-    border-radius: 24px;
-    padding: 40px 36px;
-    max-width: 400px;
-    width: 100%;
-    box-shadow: 0 8px 40px rgba(74,144,226,0.12);
-    text-align: center;
-  }
-  .login-icon { font-size: 48px; margin-bottom: 16px; display: block; }
-  .login-title {
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    margin-bottom: 8px;
-  }
-  .login-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 28px; line-height: 1.6; }
-  .input-label { font-size: 13px; font-weight: 700; color: var(--ink-mid); display: block; margin-bottom: 8px; text-align: left; }
-  .input-field {
-    width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #E0E4F0;
-    border-radius: 12px;
-    font-size: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
-    outline: none;
-    color: var(--ink);
-    transition: border-color 0.2s;
-    margin-bottom: 12px;
-  }
-  .input-field:focus { border-color: var(--sky); }
-  .btn-login {
-    width: 100%;
-    padding: 15px;
-    background: var(--sky);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-login:hover { background: var(--sky-dark); }
-  .login-note { font-size: 12px; color: var(--ink-soft); margin-top: 14px; line-height: 1.6; }
-
-  /* DASHBOARD */
-  #dashboard-screen { display: none; }
-  .main { max-width: 900px; margin: 0 auto; padding: 28px 16px 60px; }
-
-  /* STATS GRID */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 18px 16px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-  .stat-num {
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-size: 30px;
-    font-weight: 800;
-    color: var(--sky);
-  }
-  .stat-label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
-
-  /* CLASS MANAGEMENT */
-  .section { margin-bottom: 24px; }
-  .section-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .class-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 12px;
-  }
-  .class-card-header {
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    border-bottom: 1px solid #F0F2FA;
-    transition: background 0.15s;
-  }
-  .class-card-header:hover { background: var(--bg); }
-  .class-code {
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-weight: 800;
-    font-size: 16px;
-    color: var(--sky);
-    letter-spacing: 1px;
-  }
-  .class-meta { font-size: 13px; color: var(--ink-soft); }
-  .class-toggle { color: var(--ink-soft); font-size: 18px; transition: transform 0.2s; }
-  .class-toggle.open { transform: rotate(180deg); }
-
-  /* STUDENT TABLE */
-  .student-table { width: 100%; border-collapse: collapse; }
-  .student-table th {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    text-align: left;
-    padding: 10px 16px;
-    background: #FAFBFF;
-    border-bottom: 1px solid #EEF0FA;
-  }
-  .student-table td {
-    font-size: 14px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #EEF0FA;
-    color: var(--ink-mid);
-  }
-  .student-table tr:last-child td { border-bottom: none; }
-  .student-table tr:hover td { background: #FAFBFF; }
-  .student-name { font-weight: 700; color: var(--ink); }
-
-  /* PROGRESS BUBBLES */
-  .step-bubbles { display: flex; gap: 4px; }
-  .step-bubble {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #E8EAF6;
-    font-size: 11px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #aaa;
-  }
-  .step-bubble.done { background: var(--mint); color: white; }
-
-  /* STATUS TAG */
-  .status-tag {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 99px;
-    display: inline-block;
-  }
-  .status-done { background: var(--mint-light); color: #1a7a4a; }
-  .status-mid { background: var(--amber-light); color: #b07000; }
-  .status-start { background: #F1EFE8; color: #888; }
-  .status-active { background: #dcfce7; color: #15803d; font-weight: 700; }
-
-  /* NEW CLASS */
-  .new-class-form {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-  .new-class-form .input-field { margin: 0; flex: 1; min-width: 180px; padding: 10px 14px; }
-  .btn-add {
-    padding: 11px 22px;
-    background: var(--sky);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
-  .btn-add:hover { background: var(--sky-dark); }
-
-  /* COPY BUTTON */
-  .btn-copy {
-    padding: 5px 12px;
-    background: var(--sky-light);
-    color: var(--sky-dark);
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .btn-copy:hover { background: var(--sky); color: white; }
-
-  /* EMPTY STATE */
-  .empty-state {
-    padding: 40px;
-    text-align: center;
-    color: var(--ink-soft);
-    font-size: 14px;
-    line-height: 1.8;
-  }
-
-  /* LAST SEEN */
-  .last-seen { font-size: 12px; color: var(--ink-soft); }
-
-  /* TOAST */
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(60px);
-    background: var(--ink);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 99px;
-    font-size: 14px;
-    font-weight: 700;
-    transition: transform 0.3s;
-    z-index: 999;
-  }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  @media (max-width: 600px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .student-table th:nth-child(4),
-    .student-table td:nth-child(4) { display: none; }
-  }
+  body{background:#f5f7fb;color:#24324a}
+  .page{max-width:760px;margin:0 auto;padding:28px 16px 64px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+  h1{font-family:'M PLUS Rounded 1c',sans-serif;font-size:24px;margin:0}
+  .back{color:#2563a8;text-decoration:none;font-weight:700}
+  .notice,.panel{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(30,50,90,.08);margin-bottom:16px}
+  .notice{border-left:5px solid #f5a623;line-height:1.8;font-size:14px}
+  .profile{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .metric{background:#f4f7fc;border-radius:12px;padding:14px;text-align:center}
+  .metric strong{display:block;font-size:22px;color:#2563a8;margin-bottom:4px}
+  .metric span{font-size:12px;color:#667085}
+  .student-name{font-size:21px;font-weight:800;margin-bottom:5px}
+  .student-meta{font-size:13px;color:#667085;margin-bottom:18px}
+  .bar{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:8px 0 20px}
+  .bar-fill{height:100%;background:linear-gradient(90deg,#4a90e2,#34c88a);border-radius:99px}
+  .lessons{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .lesson{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:10px;padding:11px 13px;font-size:13px;gap:10px}
+  .done{color:#17844f;font-weight:700}.pending{color:#8a94a6}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  button{border:0;border-radius:10px;padding:11px 16px;background:#2563a8;color:#fff;font-weight:700;cursor:pointer}
+  button.secondary{background:#eef3fa;color:#2563a8}
+  .empty{text-align:center;padding:28px 10px;color:#667085;line-height:1.8}
+  @media(max-width:560px){.profile{grid-template-columns:1fr}.lessons{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-logo">🏫 AI教室 <span class="header-badge">先生用</span></div>
-  <div class="header-right">
-    <a class="header-link" href="index.html">← 生徒画面</a>
-    <span class="header-link" onclick="logout()">ログアウト</span>
+<main class="page">
+  <div class="top">
+    <h1>📊 この端末の進捗確認</h1>
+    <a class="back" href="index.html">← カリキュラムへ戻る</a>
   </div>
-</div>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-card">
-    <span class="login-icon">🔑</span>
-    <div class="login-title">先生用ログイン</div>
-    <div class="login-sub">門司港プログラミング教室の先生専用ページです。<br>パスワードを入力してください。</div>
-    <label class="input-label">🔒 パスワード</label>
-    <input class="input-field" id="pw-input" type="password" placeholder="パスワードを入力"
-      onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn-login" onclick="doLogin()">ログイン</button>
-    <div class="login-note">※ パスワードは門司港プログラミング教室管理者に確認してください。<br>デモ用パスワード：<strong>lam2024</strong></div>
+  <div class="notice">
+    この画面には、現在開いているChromeに保存された生徒1人分の進捗だけが表示されます。<br>
+    クラウドへの送信や、ほかのパソコンの進捗収集は行いません。
   </div>
-</div>
 
-<!-- DASHBOARD -->
-<div id="dashboard-screen">
-  <div class="main">
-    <!-- STATS -->
-    <div class="stats-grid" id="stats-grid">
-      <div class="stat-card"><div class="stat-num" id="s-students">0</div><div class="stat-label">生徒数（合計）</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-active" style="color:#22c55e">0</div><div class="stat-label">🟢 授業中（5分以内）</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-completed">0</div><div class="stat-label">全14回 完了者</div></div>
-      <div class="stat-card"><div class="stat-num" id="s-avg">0</div><div class="stat-label">平均完了授業数</div></div>
-    </div>
+  <section class="panel" id="progress-panel"></section>
+</main>
 
-    <!-- STUDENT ACCOUNTS -->
-    <div class="section">
-      <div class="section-title">🧑‍🎓 生徒アカウント管理</div>
-      <div class="new-class-form" style="flex-wrap:wrap;gap:10px;align-items:flex-end">
-        <div>
-          <label class="input-label">IDプレフィックス</label>
-          <input class="input-field" id="new-sid-prefix" value="LAM" maxlength="10" style="width:110px">
-        </div>
-        <div>
-          <label class="input-label">名前</label>
-          <input class="input-field" id="new-sid-name" placeholder="例：山田たろう" maxlength="20" style="width:160px">
-        </div>
-        <div>
-          <label class="input-label">クラスコード</label>
-          <input class="input-field" id="new-sid-class" placeholder="例：MOJIKO-A" maxlength="20" style="width:150px">
-        </div>
-        <div>
-          <label class="input-label">学年</label>
-          <select class="input-field" id="new-sid-grade" style="width:110px">
-            <option value="">なし</option>
-            <option>小学4年生</option><option>小学5年生</option><option>小学6年生</option>
-            <option>中学1年生</option><option>中学2年生</option><option>中学3年生</option>
-          </select>
-        </div>
-        <div>
-          <label class="input-label">区</label>
-          <select class="input-field" id="new-sid-ward" style="width:110px">
-            <option value="">なし</option>
-            <option>門司区</option><option>小倉北区</option><option>小倉南区</option>
-            <option>八幡東区</option><option>八幡西区</option><option>戸畑区</option><option>若松区</option>
-          </select>
-        </div>
-        <button class="btn-add" onclick="createStudent()">＋ ID発行</button>
-      </div>
-      <div id="students-list" style="margin-top:16px"></div>
-    </div>
-
-    <!-- CLASS MANAGEMENT -->
-    <div class="section">
-      <div class="section-title">📋 クラス管理</div>
-      <div id="classes-container"></div>
-    </div>
-
-    <!-- ALL STUDENTS -->
-    <div class="section">
-      <div class="section-title">👥 全生徒リスト</div>
-      <div class="class-card">
-        <div id="all-students-table"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.8/dist/umd/supabase.min.js" integrity="sha384-Tve8O+C6PBzsIMK/IRCwHbi8fyEzXIlIs6OfVBZHubplwYhaQF/4Mzxqgg+pp/oy" crossorigin="anonymous"></script>
 <script>
-const TEACHER_PW = 'lam2024';
-const SB_URL = 'https://rpvgmvkuvowjbpzrqanh.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJwdmdtdmt1dm93amJwenJxYW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3ODQwNzgsImV4cCI6MjEwMDM2MDA3OH0.EJbySeLOgotZWBfsTnoKbLoabNPq2X4o8tkiYTElMt4';
-const sb = supabase.createClient(SB_URL, SB_KEY);
-
-let allStudents = [];
-let studentAccounts = [];
-let realtimeChannel = null;
-const LESSON_LABELS = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14'];
-const ACTIVE_MINUTES = 5;
-const CARD_DEFS = [
-  { key: 'card_mystery',       label: '謎解き' },
-  { key: 'card_mascot',        label: 'マスコット' },
-  { key: 'card_interview',     label: 'インタビュー' },
-  { key: 'card_zukan',         label: '図鑑' },
-  { key: 'card_recipe',        label: 'レシピ' },
-  { key: 'card_dojo',          label: 'プロ道場' },
-  { key: 'card_prompt_battle', label: 'プロ比べ' },
-  { key: 'card_typing',        label: 'タイピング' },
-  { key: 'card_summer',        label: '自由研究' },
-  { key: 'card_ai_compare',    label: 'AI見比べ' },
+const LESSON_TITLES = [
+  'AIってなんだろう？','聞き方を変えると変わる','役割を与えてみよう','AIに教えてあげよう',
+  '詩・物語を作る','クイズ・なぞなぞを作る','北九州を調べよう','発表資料を作る',
+  '自由制作①','自由制作②・発表','AIのウソを見破れ！','AIの使い方のルール',
+  '北九州の課題を解決しよう','卒業チャレンジ'
 ];
 
-// ===== AUTH =====
-function doLogin() {
-  const pw = document.getElementById('pw-input').value;
-  if (pw === TEACHER_PW) {
-    sessionStorage.setItem('teacher-auth', '1');
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard-screen').style.display = 'block';
-    loadDashboard();
-    subscribeRealtime();
-  } else {
-    showToast('パスワードが違います');
-    document.getElementById('pw-input').value = '';
+function readState() {
+  try { return JSON.parse(localStorage.getItem('ai-classroom-state') || 'null'); }
+  catch { return null; }
+}
+
+function create(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+function downloadBackup() {
+  const data = { exportedAt: new Date().toISOString(), state: readState(), lessons: {} };
+  for (let i = 1; i <= 14; i++) {
+    try {
+      const value = localStorage.getItem(`lesson${i}-state`);
+      if (value) data.lessons[i] = JSON.parse(value);
+    } catch {}
   }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `ai-classroom-${new Date().toISOString().slice(0,10)}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
-function logout() {
-  sessionStorage.removeItem('teacher-auth');
-  if (realtimeChannel) sb.removeChannel(realtimeChannel);
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('dashboard-screen').style.display = 'none';
-}
-
-// ===== DATA =====
-async function loadDashboard() {
-  const [progressRes, accountsRes] = await Promise.all([
-    sb.from('student_progress').select('*').order('last_seen', { ascending: false }),
-    sb.from('students').select('*').order('created_at', { ascending: true })
-  ]);
-  if (progressRes.error) { showToast('データ取得エラー: ' + progressRes.error.message); return; }
-  allStudents = progressRes.data || [];
-  studentAccounts = accountsRes.data || [];
-  renderAll();
-  renderStudentAccounts();
-}
-
-// ===== STUDENT ACCOUNT MANAGEMENT =====
-async function createStudent() {
-  const prefix    = (document.getElementById('new-sid-prefix').value.trim() || 'LAM').toUpperCase();
-  const name      = document.getElementById('new-sid-name').value.trim();
-  const classCode = document.getElementById('new-sid-class').value.trim().toUpperCase();
-  const grade     = document.getElementById('new-sid-grade').value;
-  const ward      = document.getElementById('new-sid-ward').value;
-
-  if (!name)      { showToast('名前を入力してください'); return; }
-  if (!classCode) { showToast('クラスコードを入力してください'); return; }
-
-  const existing = studentAccounts.filter(s => s.student_id.startsWith(prefix + '-'));
-  const nums = existing.map(s => parseInt(s.student_id.replace(prefix + '-', '')) || 0);
-  const next = (nums.length ? Math.max(...nums) : 0) + 1;
-  const sid = prefix + '-' + String(next).padStart(3, '0');
-
-  const { error } = await sb.from('students').insert({ student_id: sid, name, class_code: classCode, grade, ward });
-  if (error) { showToast('エラー: ' + error.message); return; }
-
-  document.getElementById('new-sid-name').value = '';
-  showToast('✅ ' + name + 'さんのID: ' + sid);
-  loadDashboard();
-}
-
-async function deleteStudent(sid) {
-  if (!confirm(sid + ' を削除しますか？')) return;
-  const { error } = await sb.from('students').delete().eq('student_id', sid);
-  if (error) { showToast('エラー: ' + error.message); return; }
-  showToast('🗑️ 削除しました');
-  loadDashboard();
-}
-
-async function deleteProgress(name, classCode) {
-  if (!confirm(name + '（' + classCode + '）の進捗データを削除しますか？\n※この操作は取り消せません')) return;
-  const { error } = await sb.from('student_progress')
-    .delete().eq('name', name).eq('class_code', classCode);
-  if (error) { showToast('エラー: ' + error.message); return; }
-  showToast('🗑️ ' + name + ' の進捗を削除しました');
-  loadDashboard();
-}
-
-function renderStudentAccounts() {
-  const container = document.getElementById('students-list');
-  if (!studentAccounts.length) {
-    container.innerHTML = '<div class="empty-state">まだアカウントがありません。上のフォームから発行してください。</div>';
+function render() {
+  const panel = document.getElementById('progress-panel');
+  const state = readState();
+  if (!state?.name) {
+    const empty = create('div', 'empty');
+    empty.append(create('strong', '', 'このChromeには、まだ生徒データがありません。'), document.createElement('br'), document.createTextNode('先にカリキュラムトップで名前を登録してください。'));
+    panel.append(empty);
     return;
   }
-  container.innerHTML = `
-    <div style="overflow-x:auto">
-    <table class="student-table">
-      <thead>
-        <tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th><th>区</th><th></th></tr>
-      </thead>
-      <tbody>
-        ${studentAccounts.map(s => `
-          <tr>
-            <td>
-              <code style="font-size:15px;font-weight:800;color:#2563eb;letter-spacing:0.04em">${esc(s.student_id)}</code>
-              <button class="btn-copy" onclick="copyCode('${esc(s.student_id)}')" style="margin-left:6px">コピー</button>
-            </td>
-            <td class="student-name">${esc(s.name)}</td>
-            <td>${esc(s.class_code)}</td>
-            <td>${esc(s.grade || '-')}</td>
-            <td>${esc(s.ward || '-')}</td>
-            <td>
-              <button class="btn-copy" style="background:#fff0ee;color:#c04040"
-                onclick="deleteStudent('${esc(s.student_id)}')">削除</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    </div>
-    <button onclick="printIds()" style="margin-top:14px;padding:10px 22px;background:var(--sky);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700">🖨️ ID一覧を印刷する</button>
-  `;
+
+  const completed = state.lessonCompleted || {};
+  const doneCount = LESSON_TITLES.filter((_, index) => Boolean(completed[index + 1] || completed[String(index + 1)])).length;
+  panel.append(create('div', 'student-name', `${state.name}さん`));
+  panel.append(create('div', 'student-meta', [state.grade, state.ward, state.classCode && state.classCode !== 'クラスなし' ? `クラス：${state.classCode}` : ''].filter(Boolean).join('　')));
+
+  const metrics = create('div', 'profile');
+  const progressMetric = create('div', 'metric');
+  progressMetric.append(create('strong', '', `${doneCount} / 14`), create('span', '', '完了した授業'));
+  const badgeMetric = create('div', 'metric');
+  badgeMetric.append(create('strong', '', String((state.seenBadges || []).length)), create('span', '', '確認済みバッジ'));
+  const storageMetric = create('div', 'metric');
+  storageMetric.append(create('strong', '', 'Chrome'), create('span', '', '保存場所'));
+  metrics.append(progressMetric, badgeMetric, storageMetric);
+  panel.append(metrics);
+
+  const bar = create('div', 'bar');
+  const fill = create('div', 'bar-fill');
+  fill.style.width = `${Math.round(doneCount / 14 * 100)}%`;
+  bar.append(fill);
+  panel.append(bar);
+
+  const lessons = create('div', 'lessons');
+  LESSON_TITLES.forEach((title, index) => {
+    const done = Boolean(completed[index + 1] || completed[String(index + 1)]);
+    const row = create('div', 'lesson');
+    row.append(create('span', '', `第${index + 1}回　${title}`), create('span', done ? 'done' : 'pending', done ? '完了' : '未完了'));
+    lessons.append(row);
+  });
+  panel.append(lessons);
+
+  const actions = create('div', 'actions');
+  const backup = create('button', '', '💾 この端末のデータを保存');
+  backup.type = 'button';
+  backup.addEventListener('click', downloadBackup);
+  const reload = create('button', 'secondary', '🔄 再読み込み');
+  reload.type = 'button';
+  reload.addEventListener('click', () => location.reload());
+  actions.append(backup, reload);
+  panel.append(actions);
 }
 
-function printIds() {
-  const win = window.open('', '_blank');
-  const rows = studentAccounts.map(s =>
-    `<tr><td style="font-size:18px;font-weight:bold;letter-spacing:0.05em">${s.student_id}</td><td>${s.name}</td><td>${s.class_code}</td><td>${s.grade||''}</td></tr>`
-  ).join('');
-  win.document.write('<!DOCTYPE html><html><head><title>ログインID一覧</title>'
-    + '<style>'
-    + 'body{font-family:sans-serif;padding:24px;max-width:700px;margin:0 auto}'
-    + 'h2{margin-bottom:4px}p{color:#666;margin-bottom:16px;font-size:13px}'
-    + 'table{border-collapse:collapse;width:100%}'
-    + 'td,th{border:1px solid #ccc;padding:10px 14px;text-align:left}'
-    + 'th{background:#f5f5f5;font-size:13px}'
-    + '@media print{button{display:none}}'
-    + '</style></head><body>'
-    + '<h2>🔑 AI教室 ログインID一覧</h2>'
-    + '<p>URL: <strong>https://shinozaki-web.github.io/ai-classroom/</strong>　※IDを入力してログインしてください</p>'
-    + '<table><thead><tr><th>ログインID</th><th>名前</th><th>クラス</th><th>学年</th></tr></thead>'
-    + '<tbody>' + rows + '</tbody></table>'
-    + '</body></html>');
-  win.document.close();
-  win.print();
-}
-
-function subscribeRealtime() {
-  realtimeChannel = sb.channel('teacher-dashboard')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' },
-      () => loadDashboard())
-    .subscribe();
-}
-
-// ===== RENDER =====
-function renderAll() {
-  renderStats();
-  renderClasses();
-  renderAllStudentsTable();
-}
-
-function isActive(s) {
-  if (!s.last_seen) return false;
-  return (Date.now() - new Date(s.last_seen).getTime()) < ACTIVE_MINUTES * 60 * 1000;
-}
-
-function renderStats() {
-  const total = allStudents.length;
-  const active = allStudents.filter(isActive).length;
-  const completed = allStudents.filter(s => Object.values(s.lesson_completed||{}).filter(Boolean).length >= 14).length;
-  const avgSum = allStudents.reduce((sum, s) => sum + Object.values(s.lesson_completed||{}).filter(Boolean).length, 0);
-  document.getElementById('s-students').textContent = total;
-  document.getElementById('s-active').textContent = active;
-  document.getElementById('s-completed').textContent = completed;
-  document.getElementById('s-avg').textContent = total ? (avgSum/total).toFixed(1) : '0';
-}
-
-function renderClasses() {
-  const codes = [...new Set(allStudents.map(s => s.class_code).filter(Boolean))].sort();
-  const container = document.getElementById('classes-container');
-  if (!codes.length) {
-    container.innerHTML = '<div class="empty-state">まだ生徒データがありません。生徒が登録すると自動でクラスが表示されます。</div>';
-    return;
-  }
-  container.innerHTML = codes.map(code => {
-    const students = allStudents.filter(s => s.class_code === code);
-    const activeCount = students.filter(isActive).length;
-    return `
-      <div class="class-card">
-        <div class="class-card-header" onclick="toggleClass('cc-${esc(code)}', this)">
-          <div>
-            <div class="class-code">${esc(code)}</div>
-            <div class="class-meta">${students.length}名参加${activeCount ? ' &nbsp;🟢 ' + activeCount + '名 授業中' : ''}</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn-copy" onclick="event.stopPropagation();copyCode('${esc(code)}')">コードをコピー</button>
-            <span class="class-toggle" id="toggle-${esc(code)}">▼</span>
-          </div>
-        </div>
-        <div id="cc-${esc(code)}" style="display:none">
-          ${students.length ? renderStudentTable(students) : '<div class="empty-state">まだ生徒が参加していません。</div>'}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function lessonBubbles(lc) {
-  return LESSON_LABELS.map(i =>
-    `<div class="step-bubble ${lc[i] ? 'done' : ''}">${i}</div>`
-  ).join('');
-}
-
-function cardBubbles(lc) {
-  return CARD_DEFS.map(c =>
-    `<div class="step-bubble ${lc[c.key] ? 'done' : ''}" title="${c.label}" style="font-size:9px;min-width:36px">${c.label}</div>`
-  ).join('');
-}
-
-function cardCount(lc) {
-  return CARD_DEFS.filter(c => lc[c.key]).length;
-}
-
-function renderStudentTable(students) {
-  return `
-    <div style="overflow-x:auto">
-    <table class="student-table">
-      <thead>
-        <tr>
-          <th>なまえ</th>
-          <th>学年・区</th>
-          <th style="min-width:320px">授業（第1〜14回）</th>
-          <th style="min-width:280px">探求カード（10枚）</th>
-          <th>ステータス</th>
-          <th>最終アクセス</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        ${students.map(s => {
-          const lc = s.lesson_completed || {};
-          const lessonDone = LESSON_LABELS.filter(i => lc[i]).length;
-          const active = isActive(s);
-          const status = active ? 'active' : lessonDone >= 14 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
-          const statusLabel = active ? '🟢 授業中' : lessonDone >= 14 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
-          return `
-            <tr ${active ? 'style="background:#f0fff4"' : ''}>
-              <td class="student-name">${esc(s.name||'-')}</td>
-              <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
-              <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
-              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
-              <td><span class="status-tag status-${status}">${statusLabel}</span></td>
-              <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
-              <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
-                data-name="${esc(s.name)}" data-classcode="${esc(s.class_code)}"
-                onclick="deleteProgress(this.dataset.name, this.dataset.classcode)">削除</button></td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-    </div>
-  `;
-}
-
-function renderAllStudentsTable() {
-  const container = document.getElementById('all-students-table');
-  if (!allStudents.length) {
-    container.innerHTML = '<div class="empty-state">まだ生徒データがありません。<br>生徒が学習を始めると、ここに表示されます。</div>';
-    return;
-  }
-  container.innerHTML = `
-    <div style="overflow-x:auto">
-    <table class="student-table">
-      <thead>
-        <tr>
-          <th>なまえ</th>
-          <th>クラス</th>
-          <th>学年・区</th>
-          <th style="min-width:320px">授業（第1〜14回）</th>
-          <th style="min-width:280px">探求カード（10枚）</th>
-          <th>ステータス</th>
-          <th>最終アクセス</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        ${allStudents.map(s => {
-          const lc = s.lesson_completed || {};
-          const lessonDone = LESSON_LABELS.filter(i => lc[i]).length;
-          const active = isActive(s);
-          const status = active ? 'active' : lessonDone >= 14 ? 'done' : lessonDone > 0 ? 'mid' : 'start';
-          const statusLabel = active ? '🟢 授業中' : lessonDone >= 14 ? '完了 🎉' : lessonDone > 0 ? '進行中' : '未開始';
-          return `
-            <tr ${active ? 'style="background:#f0fff4"' : ''}>
-              <td class="student-name">${esc(s.name||'-')}</td>
-              <td><span class="btn-copy" style="cursor:default">${esc(s.class_code||'-')}</span></td>
-              <td style="font-size:12px;color:#666">${esc(s.grade||'')}${s.ward ? ' / ' + esc(s.ward) : ''}</td>
-              <td><div class="step-bubbles">${lessonBubbles(lc)}</div></td>
-              <td><div class="step-bubbles">${cardBubbles(lc)}</div><div style="font-size:11px;color:#888;margin-top:2px">${cardCount(lc)}/10 枚</div></td>
-              <td><span class="status-tag status-${status}">${statusLabel}</span></td>
-              <td class="last-seen">${s.last_seen ? timeAgo(s.last_seen) : '-'}</td>
-              <td><button class="btn-copy" style="background:#fff0ee;color:#c04040"
-                data-name="${esc(s.name)}" data-classcode="${esc(s.class_code)}"
-                onclick="deleteProgress(this.dataset.name, this.dataset.classcode)">削除</button></td>
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-    </div>
-  `;
-}
-
-// ===== HELPERS =====
-function toggleClass(id, _header) {
-  const el = document.getElementById(id);
-  const code = id.replace('cc-', '');
-  const tog = document.getElementById('toggle-' + code);
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    if (tog) tog.classList.add('open');
-  } else {
-    el.style.display = 'none';
-    if (tog) tog.classList.remove('open');
-  }
-}
-
-function copyCode(code) {
-  navigator.clipboard.writeText(code).then(() => showToast('📋 ' + code + ' をコピーしました'));
-}
-
-function timeAgo(isoStr) {
-  const m = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
-  if (m < 1) return 'たった今';
-  if (m < 60) return m + '分前';
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + '時間前';
-  return Math.floor(h/24) + '日前';
-}
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// "クラス管理" section no longer needed for adding/deleting — classes auto-appear from Supabase
-// Keep addClass wired to avoid errors if old HTML calls it
-function addClass() { showToast('クラスは生徒の登録時に自動作成されます'); }
-function deleteClass() { showToast('Supabase管理画面からデータを削除してください'); }
-
-// Boot
-if (sessionStorage.getItem('teacher-auth') === '1') {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard-screen').style.display = 'block';
-  loadDashboard();
-  subscribeRealtime();
-}
+render();
 </script>
 </body>
 </html>
